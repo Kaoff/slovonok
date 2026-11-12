@@ -18,6 +18,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from config import MEDIA_DIR, Config, ConfigStore
+from detection import Rule
 from engine import Engine
 from media import make_playable, media_type, needs_conversion
 
@@ -164,6 +165,62 @@ def test_punishment(punishment_id: str):
     if result is None:
         raise HTTPException(404, "Unknown punishment")
     return {"ok": True, **result}
+
+
+# --- Learning a word -------------------------------------------------------
+
+
+class Texts(BaseModel):
+    texts: list[str]
+
+
+class Learning(BaseModel):
+    active: bool
+
+
+class MatchRequest(BaseModel):
+    """A word as the panel is editing it (not saved yet), and sentences to try it on."""
+
+    word: str
+    mode: str = "phonetic"
+    word_start: bool = False
+    word_end: bool = True
+    plural: bool = True
+    variants: list[str] = []
+    tolerance: int = 0
+    texts: list[str]
+
+
+@app.post("/api/learning")
+def learning(request: Learning):
+    """The panel's "learn a word" window pauses detection while it is open (see Engine)."""
+    engine.set_learning(request.active)
+    return {"learning": engine.learning}
+
+
+@app.post("/api/phonemize")
+def phonemize(request: Texts):
+    return {"sounds": engine.phonemize(request.texts)}
+
+
+@app.post("/api/match")
+def match(request: MatchRequest):
+    """Dry run: tells which texts would trigger the word. Unlike /api/simulate, no punishment
+    and no counter."""
+    rule = Rule(
+        id="dry-run",
+        word=request.word,
+        mode=request.mode,
+        word_start=request.word_start,
+        word_end=request.word_end,
+        plural=request.plural,
+        variants=[v for v in request.variants if v.strip()],
+        tolerance=request.tolerance,
+    )
+    try:
+        return {"matches": engine.dry_run(rule, request.texts)}
+    except ValueError as e:
+        raise HTTPException(422, str(e)) from e
 
 
 class Simulation(BaseModel):

@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { api } from '../api';
+	import { onDestroy } from 'svelte';
 	import { t } from '../i18n.svelte';
 	import type { Mode, Word, WordDisplayMode } from '../types';
 	import Segmented from '../ui/Segmented.svelte';
 	import Toggle from '../ui/Toggle.svelte';
+	import LearnWizard from './LearnWizard.svelte';
 	import PunishmentPicker from './PunishmentPicker.svelte';
 
 	let { word = $bindable(), onremove }: { word: Word; onremove: () => void } = $props();
@@ -17,6 +19,44 @@
 		{ value: 'partial', label: t('word.display.partial') },
 		{ value: 'hidden', label: t('word.display.hidden') }
 	]);
+	// --- "Sounds like": variants and tolerance ---
+	let learning = $state(false);
+	const tolerances = $derived<{ value: string; label: string }[]>([
+		{ value: '0', label: t('word.tolerance.0') },
+		{ value: '1', label: t('word.tolerance.1') },
+		{ value: '2', label: t('word.tolerance.2') }
+	]);
+
+	// Short words can't take the full tolerance (same rule as the server: 4 sounds must match).
+	// The server knows the sounds, so ask it, a moment after typing stops.
+	const MIN_MATCHED_SOUNDS = 4;
+	let soundCount = $state<number | null>(null);
+	let askTimer: ReturnType<typeof setTimeout> | undefined;
+	$effect(() => {
+		const text = word.word;
+		if (word.mode !== 'phonetic' || word.tolerance === 0 || !text.trim()) {
+			soundCount = null;
+			return;
+		}
+		clearTimeout(askTimer);
+		askTimer = setTimeout(async () => {
+			try {
+				const { sounds } = await api.phonemize([text]);
+				// A grapheme = a sound with its diacritics (nasal vowels)
+				const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+				soundCount = [...segmenter.segment(sounds[0].replace(/\s+/g, ''))].length;
+			} catch {
+				soundCount = null;
+			}
+		}, 400);
+	});
+	onDestroy(() => clearTimeout(askTimer));
+	const effectiveTolerance = $derived(
+		soundCount === null
+			? null
+			: Math.max(0, Math.min(word.tolerance, soundCount - MIN_MATCHED_SOUNDS))
+	);
+
 	// Words added by a punishment can expire: show the time left
 	let now = $state(Date.now());
 	$effect(() => {
@@ -97,5 +137,57 @@
 		<p class="text-xs text-muted">{t('word.displayHint')}</p>
 	</section>
 
+	<section class="space-y-3">
+		<div class="flex flex-wrap items-center gap-3">
+			<h3 class="label text-base">{t('word.variants')}</h3>
+			<button class="key text-xs" onclick={() => (learning = true)} disabled={!word.word.trim()}>
+				{t('word.learn')}
+			</button>
+			<button class="key text-xs" onclick={() => word.variants.push('')}>
+				+ {t('word.variantAdd')}
+			</button>
+		</div>
+		<p class="text-xs text-muted">{t('word.variantsHint')}</p>
+		{#if word.variants.length}
+			<ul class="space-y-1.5">
+				{#each word.variants as variant, i (i)}
+					<li class="flex items-center gap-2">
+						<input
+							class="input flex-1"
+							placeholder={t('word.variantPlaceholder')}
+							aria-label={t('word.variants')}
+							value={variant}
+							oninput={(e) => (word.variants[i] = e.currentTarget.value)}
+						/>
+						<button
+							class="key-danger"
+							title={t('word.remove')}
+							aria-label={t('word.remove')}
+							onclick={() => word.variants.splice(i, 1)}>✕</button
+						>
+					</li>
+				{/each}
+			</ul>
+		{/if}
+
+		{#if word.mode === 'phonetic'}
+			<div class="flex flex-wrap items-center gap-3">
+				<span class="label">{t('word.tolerance')}</span>
+				<Segmented
+					bind:value={() => String(word.tolerance), (value) => (word.tolerance = Number(value))}
+					options={tolerances}
+				/>
+			</div>
+			<p class="text-xs text-muted">{t('word.toleranceHint')}</p>
+			{#if effectiveTolerance !== null && effectiveTolerance < word.tolerance}
+				<p class="text-xs text-accent">{t('word.toleranceShort', { count: effectiveTolerance })}</p>
+			{/if}
+		{/if}
+		{#if word.variants.length || word.tolerance > 0}
+			<p class="text-xs text-accent">{t('word.falsePositives')}</p>
+		{/if}
+	</section>
+
 	<PunishmentPicker bind:selection={word.punishments} />
+	<LearnWizard bind:open={learning} bind:word />
 </article>

@@ -17,6 +17,8 @@
 			enabled: true,
 			count: 0,
 			display_mode: 'shown',
+			variants: [],
+			tolerance: 0,
 			auto: false,
 			expires_at: null,
 			punishments: { strategy: 'all', ids: [] }

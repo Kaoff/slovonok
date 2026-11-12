@@ -4,15 +4,22 @@
 		checked = $bindable(),
 		label,
 		hint,
-		title
-	}: { checked: boolean; label?: string; hint?: string; title?: string } = $props();
+		title,
+		onchange
+	}: {
+		checked: boolean;
+		label?: string;
+		hint?: string;
+		title?: string;
+		onchange?: () => void;
+	} = $props();
 </script>
 
 <!-- relative: the hidden checkbox (absolute) must stay inside the label. Otherwise it is placed
      against the body, below the fold of a scrolled column, and focusing it scrolls the whole
      (locked) page. -->
 <label class="relative flex cursor-pointer items-start gap-3" {title}>
-	<input type="checkbox" bind:checked class="peer sr-only" />
+	<input type="checkbox" bind:checked {onchange} class="peer sr-only" />
 	<span
 		class="switch-track mt-0.5 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-3 peer-focus-visible:outline-accent"
 	>

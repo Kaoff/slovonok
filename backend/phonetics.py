@@ -31,7 +31,9 @@ def create_phonemizer():
     try:
         from phonemizer.backend import EspeakBackend
 
-        backend = EspeakBackend(LANGUAGE)
+        # "remove-flags": without it, a foreign word comes out as "(en)laɪv(fr)", and those
+        # flags would be read as sounds ("(", "e", "n", ")") by the detector.
+        backend = EspeakBackend(LANGUAGE, language_switch="remove-flags")
     except Exception as e:
         raise RuntimeError(
             f"Could not initialize espeak-ng: {e}\n"

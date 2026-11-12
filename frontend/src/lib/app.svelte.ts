@@ -41,6 +41,7 @@ class AppState {
 
 	/** Words added by a punishment that the user deleted before the delete was saved. */
 	#dismissed = new Set<string>();
+	#finalListeners = new Set<(text: string) => void>();
 	#savedJson = '';
 	#saveTimer: ReturnType<typeof setTimeout> | undefined;
 	#savePromise: Promise<void> | null = null;
@@ -96,6 +97,8 @@ class AppState {
 				break;
 
 			case 'transcription': {
+				if (event.final && event.text)
+					for (const listen of this.#finalListeners) listen(event.text);
 				const last = this.transcript.at(-1);
 				if (last && !last.final) {
 					last.text = event.text;
@@ -122,6 +125,12 @@ class AppState {
 				this.refreshStatus();
 				break;
 		}
+	}
+
+	/** Calls `listener` with every final transcription, until the returned function is called. */
+	listenFinals(listener: (text: string) => void): () => void {
+		this.#finalListeners.add(listener);
+		return () => this.#finalListeners.delete(listener);
 	}
 
 	#setConfig(config: Config) {

@@ -51,6 +51,10 @@ class Engine:
         # uses it to put the screen window back on top of everything.
         self.before_punishment: list[Callable[[], None]] = []
         self.listener_error: str | None = None
+        # While the panel's "learn a word" window is open, what is said is shown but not detected
+        # (no punishment while the streamer repeats the word). The panel refreshes this every few
+        # seconds: if it crashes or is closed, detection comes back by itself.
+        self._learning_until = 0.0
         self._lock = threading.Lock()
 
         try:
@@ -79,6 +83,8 @@ class Engine:
                 word_start=w.word_start,
                 plural=w.plural,
                 cooldown=config.cooldown,
+                variants=[v for v in w.variants if v.strip()],
+                tolerance=w.tolerance,
             )
             for w in config.words
             if w.enabled and w.word.strip() and (w.mode == "exact" or self.phonemizer)
@@ -150,7 +156,39 @@ class Engine:
             "microphone": l.device_name if l else None,
             "listener_error": self.listener_error,
             "phonetics_error": self.phonetics_error,
+            "learning": self.learning,
         }
+
+    # --- Learning a word ("sounds like") -------------------------------
+
+    LEARNING_TIMEOUT = 15.0  # seconds without news from the panel
+
+    @property
+    def learning(self) -> bool:
+        return time.monotonic() < self._learning_until
+
+    def set_learning(self, active: bool) -> None:
+        self._learning_until = time.monotonic() + self.LEARNING_TIMEOUT if active else 0.0
+
+    def phonemize(self, texts: list[str]) -> list[str]:
+        """The sounds of each text, for the panel ("" if it can't be phonemized)."""
+        sounds = []
+        with self._lock:
+            for text in texts:
+                try:
+                    sounds.append(self.detector.phonemize_text(text) if self.phonemizer else "")
+                except Exception:
+                    sounds.append("")
+        return sounds
+
+    def dry_run(self, rule: Rule, texts: list[str]) -> list[bool]:
+        """Would this word (with its variants and tolerance) be detected in each text?
+        Nothing is punished or counted. Raises ValueError if the word can't be used."""
+        if rule.mode == "phonetic" and not self.phonemizer:
+            raise ValueError(self.phonetics_error or "Phonetic mode is unavailable")
+        with self._lock:
+            detector = Detector([rule], self.phonemizer, cache=self.detector._cache)
+            return [bool(text.strip()) and bool(detector.matches(text)) for text in texts]
 
     # --- Detection and punishments -------------------------------------
 
@@ -162,6 +200,8 @@ class Engine:
         self.broadcaster.publish({"type": "transcription", "text": text, "final": final})
         if final and text:
             print(f"   {text}")
+        if self.learning:
+            return
         with self._lock:
             triggered = self.detector.analyze(text, final)
         for rule in triggered:

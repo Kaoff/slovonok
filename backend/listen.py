@@ -96,7 +96,7 @@ def main():
     ):
         print(f"🎙  Listening on '{info['name']}' ({sample_rate} Hz) — Ctrl+C to stop")
         for r in rules:
-            print(f"   Forbidden word: '{r.word}' ({r.mode}, pattern {r._pattern.pattern})")
+            print(f"   Forbidden word: '{r.word}' ({r.mode}, pattern {r._compiled.patterns[0].pattern})")
         print()
 
         last_partial = ""

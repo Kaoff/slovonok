@@ -61,6 +61,11 @@ class Word(BaseModel):
     enabled: bool = True
     count: int = 0
     display_mode: Literal["shown", "hidden", "partial"] = "shown"  # in the words overlay
+    # "Sounds like": what Vosk transcribes when the word is said (it can't output invented
+    # words, so it outputs the closest French). Each one triggers the word, same options.
+    variants: list[str] = Field(default_factory=list)
+    # Phonetic mode: how many sounds may differ (see fuzzy.py). More = more false positives.
+    tolerance: int = Field(default=0, ge=0, le=2)
     punishments: PunishmentSelection = Field(default_factory=PunishmentSelection)
     # Words added by an "add_word" punishment: the server decides when they exist (see ConfigStore.replace)
     auto: bool = False

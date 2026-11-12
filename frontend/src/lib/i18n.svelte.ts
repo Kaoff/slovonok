@@ -193,6 +193,39 @@ const en = {
 	'settings.maxWordsHint':
 		'no "add a word" punishment beyond this many active words (0 = no limit)',
 
+	'word.variants': 'Sounds like',
+	'word.variantsHint':
+		'What the app hears when the word is said. Vosk only knows French words, so an invented word comes out as the closest ones ("pas quoi"). Each one also triggers this word.',
+	'word.variantAdd': 'Add',
+	'word.variantPlaceholder': 'What was heard…',
+	'word.learn': 'Learn',
+	'word.tolerance': 'Tolerance',
+	'word.tolerance.0': 'Exact sounds',
+	'word.tolerance.1': '1 sound off',
+	'word.tolerance.2': '2 sounds off',
+	'word.toleranceHint':
+		'Also accepts what differs by a few sounds ("pas quoi" for "pakwaf"). Short words get less.',
+	'word.toleranceShort': 'This word is short: at most {count} sound(s) can differ.',
+	'word.falsePositives':
+		'Careful: a variant is a real French phrase, and tolerance accepts close ones. "pas quoi" also triggers on "je sais pas quoi faire". Keep them few and specific.',
+	'learn.title': 'Learn "{word}"',
+	'learn.intro':
+		'Say the word alone, five times, pausing between each. Then say it a few times inside a sentence.',
+	'learn.paused': 'Detection is paused while this window is open.',
+	'learn.notListening': 'The app is not listening: check the microphone in Settings.',
+	'learn.target': 'The word sounds like',
+	'learn.waiting': 'Waiting for speech…',
+	'learn.keep': 'Add to the variants',
+	'learn.take': 'What was heard',
+	'learn.times': 'Times heard',
+	'learn.detected': 'Already detected',
+	'learn.same': 'Same sounds as the word',
+	'learn.trimHint':
+		'Edit a line to keep only the part that sounds like the word ("sait par quoi" → "par quoi"). Lines heard twice are pre-selected.',
+	'learn.clear': 'Clear',
+	'learn.save': 'Add to the word ({count})',
+	'learn.close': 'Close',
+
 	'live.disconnected': 'Disconnected from the app',
 	'live.listening': 'Listening',
 	'live.notListening': 'Not listening',
@@ -402,6 +435,39 @@ const fr: Dictionary = {
 	'settings.maxWords': 'Limite de mots actifs',
 	'settings.maxWordsHint':
 		'aucune punition « ajouter un mot » au-delà de ce nombre de mots actifs (0 = sans limite)',
+
+	'word.variants': 'Ça sonne comme',
+	'word.variantsHint':
+		"Ce que l'appli entend quand le mot est dit. Vosk ne connaît que des mots français : un mot inventé ressort comme les plus proches (« pas quoi »). Chacun déclenche aussi ce mot.",
+	'word.variantAdd': 'Ajouter',
+	'word.variantPlaceholder': 'Ce qui a été entendu…',
+	'word.learn': 'Apprendre',
+	'word.tolerance': 'Tolérance',
+	'word.tolerance.0': 'Sons exacts',
+	'word.tolerance.1': '1 son d’écart',
+	'word.tolerance.2': '2 sons d’écart',
+	'word.toleranceHint':
+		'Accepte aussi ce qui diffère de quelques sons (« pas quoi » pour « pakwaf »). Les mots courts en ont moins.',
+	'word.toleranceShort': 'Ce mot est court : au plus {count} son(s) peuvent différer.',
+	'word.falsePositives':
+		'Attention : une variante est une vraie phrase française, et la tolérance accepte les proches. « pas quoi » se déclenche aussi sur « je sais pas quoi faire ». Gardez-en peu, et précises.',
+	'learn.title': 'Apprendre « {word} »',
+	'learn.intro':
+		'Dites le mot seul, cinq fois, en faisant une pause entre chaque. Puis dites-le quelques fois dans une phrase.',
+	'learn.paused': 'La détection est en pause tant que cette fenêtre est ouverte.',
+	'learn.notListening': "L'appli n'écoute pas : vérifiez le micro dans les Réglages.",
+	'learn.target': 'Le mot sonne comme',
+	'learn.waiting': 'En attente de parole…',
+	'learn.keep': 'Ajouter aux variantes',
+	'learn.take': 'Ce qui a été entendu',
+	'learn.times': 'Nombre de fois entendu',
+	'learn.detected': 'Déjà détecté',
+	'learn.same': 'Mêmes sons que le mot',
+	'learn.trimHint':
+		'Modifiez une ligne pour ne garder que ce qui sonne comme le mot (« sait par quoi » → « par quoi »). Les lignes entendues deux fois sont présélectionnées.',
+	'learn.clear': 'Effacer',
+	'learn.save': 'Ajouter au mot ({count})',
+	'learn.close': 'Fermer',
 
 	'live.disconnected': "Déconnecté de l'appli",
 	'live.listening': 'Écoute en cours',

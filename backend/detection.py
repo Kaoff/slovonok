@@ -16,6 +16,8 @@ import unicodedata
 from dataclasses import dataclass, field
 from typing import Callable, Iterable
 
+from fuzzy import approximate_match, effective_tolerance
+
 # Phonemizer: list of words -> list of IPA transcriptions (same order).
 Phonemizer = Callable[[list[str]], list[str]]
 
@@ -54,6 +56,18 @@ def normalize_phonemes(ipa: str) -> str:
     return re.sub(r"\s+", " ", ipa).strip()
 
 
+def phoneme_stream(ipa: str) -> tuple[list[str], list[bool]]:
+    """The sounds of a phonemized text (words separated by spaces), and for each sound whether
+    it starts a word."""
+    sounds: list[str] = []
+    starts: list[bool] = []
+    for word in ipa.split():
+        word_sounds = segments(word)
+        sounds += word_sounds
+        starts += [True] + [False] * (len(word_sounds) - 1)
+    return sounds, starts
+
+
 def segments(ipa: str) -> list[str]:
     """Splits into sounds, keeping diacritics (e.g. nasal ɑ̃) attached to their letter."""
     sounds: list[str] = []
@@ -74,14 +88,30 @@ class Rule:
     word_end: bool = True  # the sound must end a word (avoids "dépourvu" for "époux")
     plural: bool = True  # exact mode: also accepts "mots", "chevaux"…
     cooldown: float = 5.0  # seconds between two triggers
-    _pattern: re.Pattern | None = field(default=None, repr=False)
+    # What Vosk was heard saying for this word ("sounds like"): each one also triggers the rule,
+    # with the same options. One rule, several patterns: a single cooldown, a single trigger.
+    variants: list[str] = field(default_factory=list)
+    # Phonetic mode: sound edits allowed (0 = exact sounds). See fuzzy.py.
+    tolerance: int = 0
+    _compiled: "Compiled | None" = field(default=None, repr=False)
     _last: float = field(default=0.0, repr=False)
 
 
+@dataclass
+class Compiled:
+    patterns: list[re.Pattern]  # exact comparison (regex), one per word or variant
+    sounds: list[list[str]]  # phonetic mode: the sounds of each, for approximate matching
+
+
 class Detector:
-    def __init__(self, rules: Iterable[Rule], phonemizer: Phonemizer | None = None):
+    def __init__(
+        self,
+        rules: Iterable[Rule],
+        phonemizer: Phonemizer | None = None,
+        cache: dict[str, str] | None = None,
+    ):
         self.phonemizer = phonemizer
-        self._cache: dict[str, str] = {}
+        self._cache: dict[str, str] = {} if cache is None else cache  # word -> sounds, can be shared
         self._seen_in_utterance: set[str] = set()
         self.rules: list[Rule] = []
         self.update(rules)
@@ -95,34 +125,51 @@ class Detector:
             raise ValueError("A phonetic rule requires a phonemizer")
         previous = {r.id: r._last for r in self.rules}
         for r in rules:
-            r._pattern = self._compile(r)
+            r._compiled = self._compile_rule(r)
             r._last = previous.get(r.id, 0.0)  # a reload must not reset the cooldowns
         self.rules = rules
 
     def can_compile(self, r: Rule) -> bool:
         """False if the rule cannot be used (e.g. a word with no pronounceable sound)."""
         try:
-            self._compile(r)
+            self._compile_rule(r)
         except ValueError:
             return False
         return True
 
-    def _compile(self, r: Rule) -> re.Pattern:
+    def _compile_rule(self, r: Rule) -> Compiled:
+        """The word must be usable (else ValueError); an unusable variant is just skipped,
+        so one bad variant never takes the detection of every word down."""
+        compiled = Compiled([], [])
+        for index, text in enumerate([r.word, *r.variants]):
+            try:
+                pattern, sounds = self._compile_text(r, text)
+            except ValueError:
+                if index == 0:
+                    raise
+                continue
+            compiled.patterns.append(pattern)
+            compiled.sounds.append(sounds)
+        return compiled
+
+    def _compile_text(self, r: Rule, text: str) -> tuple[re.Pattern, list[str]]:
         if r.mode == "exact":
-            word = normalize_text(r.word)
-            body = r"\s+".join(re.escape(w) for w in word.split())
+            words = normalize_text(text).split()
+            if not words:
+                raise ValueError(f"Nothing to detect in '{text}'")
+            body = r"\s+".join(re.escape(w) for w in words)
             suffix = r"(?:s|x)?" if r.plural else ""
-            return re.compile(rf"(?<![a-z0-9]){body}{suffix}(?![a-z0-9])")
+            return re.compile(rf"(?<![a-z0-9]){body}{suffix}(?![a-z0-9])"), []
 
         if r.mode == "phonetic":
-            sounds = segments(self.phonemize_text(r.word))
+            sounds = segments(self.phonemize_text(text))
             if not sounds:
-                raise ValueError(f"Cannot phonemize '{r.word}'")
+                raise ValueError(f"Cannot phonemize '{text}'")
             # A word boundary (space) is allowed between every sound.
             body = " ?".join(re.escape(s) for s in sounds)
             before = r"(?:^|(?<= ))" if r.word_start else ""
             after = r"(?= |$)" if r.word_end else ""
-            return re.compile(f"{before}{body}{after}")
+            return re.compile(f"{before}{body}{after}"), sounds
 
         raise ValueError(f"Unknown mode: {r.mode}")
 
@@ -140,18 +187,30 @@ class Detector:
     # --- Detection -----------------------------------------------------
 
     def matches(self, text: str) -> list[Rule]:
-        """All rules matching the text, without cooldown or memory."""
+        """All rules matching the text, without cooldown or memory (each at most once)."""
         normalized = normalize_text(text)
         ipa = None
+        stream = None
         found = []
         for r in self.rules:
+            compiled = r._compiled
             if r.mode == "phonetic":
                 if ipa is None:
                     ipa = self.phonemize_text(text)
-                target = ipa
+                if r.tolerance > 0:
+                    stream = stream or phoneme_stream(ipa)
+                    hit = any(
+                        approximate_match(
+                            sounds, *stream, effective_tolerance(len(sounds), r.tolerance),
+                            r.word_start, r.word_end,
+                        )
+                        for sounds in compiled.sounds
+                    )
+                else:
+                    hit = any(p.search(ipa) for p in compiled.patterns)
             else:
-                target = normalized
-            if r._pattern.search(target):
+                hit = any(p.search(normalized) for p in compiled.patterns)
+            if hit:
                 found.append(r)
         return found
 

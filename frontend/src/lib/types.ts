@@ -55,6 +55,10 @@ export interface Word {
 	enabled: boolean;
 	count: number;
 	display_mode: WordDisplayMode;
+	/** What Vosk transcribes when the word is said (it can't output invented words). */
+	variants: string[];
+	/** Phonetic mode: how many sounds may differ (0 to 2). */
+	tolerance: number;
 	punishments: PunishmentSelection;
 	/** Added by a punishment: the server decides when it exists. */
 	auto: boolean;
@@ -115,11 +119,25 @@ export interface PunishmentTest {
 	word?: string;
 }
 
+/** A word as it is being edited (not saved), to try on sentences. */
+export interface MatchRequest {
+	word: string;
+	mode: Mode;
+	word_start: boolean;
+	word_end: boolean;
+	plural: boolean;
+	variants: string[];
+	tolerance: number;
+	texts: string[];
+}
+
 export interface Status {
 	listening: boolean;
 	microphone: string | null;
 	listener_error: string | null;
 	phonetics_error: string | null;
+	/** The "learn a word" window is open: speech is shown but not detected. */
+	learning: boolean;
 }
 
 export type ServerEvent =

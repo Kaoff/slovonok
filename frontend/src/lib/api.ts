@@ -1,4 +1,12 @@
-import type { Config, MediaFile, Microphones, PunishmentTest, ScreenInfo, Status } from './types';
+import type {
+	Config,
+	MatchRequest,
+	MediaFile,
+	Microphones,
+	PunishmentTest,
+	ScreenInfo,
+	Status
+} from './types';
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
 	const isForm = body instanceof FormData;
@@ -40,6 +48,13 @@ export const api = {
 
 	testPunishment: (id: string) =>
 		request<PunishmentTest>('POST', `/api/punishments/${encodeURIComponent(id)}/test`),
+	/** Pauses detection (the panel repeats this every few seconds while learning a word). */
+	setLearning: (active: boolean) =>
+		request<{ learning: boolean }>('POST', '/api/learning', { active }),
+	phonemize: (texts: string[]) =>
+		request<{ sounds: string[] }>('POST', '/api/phonemize', { texts }),
+	/** Dry run: which texts would trigger this word. No punishment, no counter. */
+	match: (word: MatchRequest) => request<{ matches: boolean[] }>('POST', '/api/match', word),
 	simulate: (text: string) => request<{ triggered: string[] }>('POST', '/api/simulate', { text })
 };
 
