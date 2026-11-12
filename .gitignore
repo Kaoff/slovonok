@@ -19,3 +19,5 @@ frontend/.svelte-kit/
 
 # Local data (config, media)
 backend/data/
+packaging/*.log
+packaging/*.err
