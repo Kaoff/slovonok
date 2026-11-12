@@ -51,6 +51,11 @@ class Engine:
         # uses it to put the screen window back on top of everything.
         self.before_punishment: list[Callable[[], None]] = []
         self.listener_error: str | None = None
+        # Listening paused from the tray or the panel: the microphone is released
+        self.paused = False
+        # Called (from any thread) after every config change: the desktop app uses it to
+        # recreate the screen window when its settings change.
+        self.config_listeners: list[Callable[[Config], None]] = []
         # While the panel's "learn a word" window is open, what is said is shown but not detected
         # (no punishment while the streamer repeats the word). The panel refreshes this every few
         # seconds: if it crashes or is closed, detection comes back by itself.
@@ -92,10 +97,16 @@ class Engine:
         with self._lock:
             self.detector.update(rules)
 
-        if self.listening_enabled:
+        if self.listening_enabled and not self.paused:
             l = self.listener
             if l is None or not l.is_alive() or (l.microphone, l.model) != (config.microphone, config.model):
                 self.start_listening(config)
+
+        for listener in list(self.config_listeners):
+            try:
+                listener(config)
+            except Exception as e:  # a faulty observer must not break saving the config
+                print(f"⚠ Config listener failed: {e}")
 
     def update_config(self, config: Config) -> Config:
         config = self.store.replace(config)
@@ -142,6 +153,14 @@ class Engine:
             self.listener.join(timeout=2)
             self.listener = None
 
+    def set_paused(self, paused: bool) -> None:
+        """Stops or restarts listening without touching the config."""
+        self.paused = paused
+        if paused:
+            self.stop_listening()
+        else:
+            self.apply(self.store.read())
+
     def on_listener_error(self, message: str) -> None:
         if threading.current_thread() is not self.listener:
             return
@@ -157,6 +176,7 @@ class Engine:
             "listener_error": self.listener_error,
             "phonetics_error": self.phonetics_error,
             "learning": self.learning,
+            "paused": self.paused,
         }
 
     # --- Learning a word ("sounds like") -------------------------------

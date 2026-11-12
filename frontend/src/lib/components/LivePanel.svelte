@@ -23,6 +23,11 @@
 		text = '';
 	}
 
+	async function togglePause() {
+		if (!app.status) return;
+		app.status = await api.setPaused(!app.status.paused);
+	}
+
 	const time = (d: Date) =>
 		d.toLocaleTimeString(i18n.locale, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 </script>
@@ -32,11 +37,18 @@
 	<div class="space-y-1 text-sm">
 		{#if !app.connected}
 			<p class="flex items-center gap-2"><span class="led-red"></span>{t('live.disconnected')}</p>
+		{:else if app.status?.paused}
+			<p class="flex items-center gap-2"><span class="led"></span>{t('live.paused')}</p>
 		{:else if app.status?.listening}
 			<p class="flex items-center gap-2"><span class="led-green"></span>{t('live.listening')}</p>
 			<p class="truncate pl-4 text-xs text-muted">{app.status.microphone}</p>
 		{:else}
 			<p class="flex items-center gap-2"><span class="led"></span>{t('live.notListening')}</p>
+		{/if}
+		{#if app.connected && app.status}
+			<button class="key text-xs" onclick={togglePause}>
+				{app.status.paused ? t('live.resume') : t('live.pause')}
+			</button>
 		{/if}
 		{#if app.status?.listener_error}
 			<p class="text-xs text-danger">{app.status.listener_error}</p>

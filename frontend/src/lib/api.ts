@@ -49,6 +49,7 @@ export const api = {
 	testPunishment: (id: string) =>
 		request<PunishmentTest>('POST', `/api/punishments/${encodeURIComponent(id)}/test`),
 	/** Pauses detection (the panel repeats this every few seconds while learning a word). */
+	setPaused: (paused: boolean) => request<Status>('POST', '/api/pause', { paused }),
 	setLearning: (active: boolean) =>
 		request<{ learning: boolean }>('POST', '/api/learning', { active }),
 	phonemize: (texts: string[]) =>

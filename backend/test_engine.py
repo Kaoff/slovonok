@@ -58,6 +58,41 @@ class TestLearningMode(unittest.TestCase):
         self.assertEqual(self.count(), 1)
 
 
+class TestPauseAndObservers(unittest.TestCase):
+    def setUp(self):
+        self.dir = tempfile.TemporaryDirectory()
+        store = ConfigStore(Path(self.dir.name) / "config.json")
+        store.replace(Config(words=[Word(id="w1", word="Pakwaf")]))
+        self.engine = Engine(store, listening_enabled=False)
+
+    def tearDown(self):
+        self.dir.cleanup()
+
+    def test_pause_is_reported(self):
+        self.assertFalse(self.engine.paused)
+        self.engine.set_paused(True)
+        self.assertTrue(self.engine.paused)
+        self.engine.set_paused(False)
+        self.assertFalse(self.engine.paused)
+
+    def test_config_listeners_see_every_change(self):
+        seen = []
+        self.engine.config_listeners.append(lambda config: seen.append(config.cooldown))
+        config = self.engine.store.read()
+        config.cooldown = 9.0
+        self.engine.update_config(config)
+        self.assertEqual(seen, [9.0])
+
+    def test_a_failing_listener_does_not_break_saving(self):
+        def broken(config):
+            raise RuntimeError("boom")
+
+        seen = []
+        self.engine.config_listeners += [broken, lambda config: seen.append(1)]
+        self.engine.update_config(self.engine.store.read())
+        self.assertEqual(seen, [1])
+
+
 class TestDryRun(unittest.TestCase):
     def setUp(self):
         self.dir = tempfile.TemporaryDirectory()

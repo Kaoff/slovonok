@@ -111,10 +111,7 @@
 	</section>
 
 	<section class="space-y-4 panel pt-6">
-		<div>
-			<h3 class="subheading">{t('settings.screen')}</h3>
-			<p class="text-xs text-accent">{t('settings.restartHint')}</p>
-		</div>
+		<h3 class="subheading">{t('settings.screen')}</h3>
 		<Toggle
 			bind:checked={config.display.screen.enabled}
 			label={t('settings.screenEnabled')}

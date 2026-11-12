@@ -138,6 +138,8 @@ export interface Status {
 	phonetics_error: string | null;
 	/** The "learn a word" window is open: speech is shown but not detected. */
 	learning: boolean;
+	/** Listening paused from the tray or the panel (the microphone is released). */
+	paused: boolean;
 }
 
 export type ServerEvent =

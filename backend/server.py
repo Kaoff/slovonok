@@ -224,6 +224,17 @@ def match(request: MatchRequest):
         raise HTTPException(422, str(e)) from e
 
 
+class Paused(BaseModel):
+    paused: bool
+
+
+@app.post("/api/pause")
+def pause(request: Paused):
+    """Pauses or resumes listening (also available from the tray menu)."""
+    engine.set_paused(request.paused)
+    return engine.status()
+
+
 class Simulation(BaseModel):
     text: str
 
