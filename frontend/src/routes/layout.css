@@ -1,0 +1,313 @@
+@import 'tailwindcss';
+@import '@fontsource/orbitron/700.css';
+@import '@fontsource/orbitron/900.css';
+@import '@fontsource/share-tech-mono/400.css';
+
+/*
+ * Theme: Cybercore.
+ * Neon cyan and magenta on black, a faint grid, scanlines, cut corners.
+ * Cyan means "on / selected", magenta means "act now" (main actions, detections).
+ */
+@theme {
+	--font-sans: 'Share Tech Mono', ui-monospace, monospace;
+	--font-heading: 'Orbitron', sans-serif;
+
+	--color-surface: #05060b;
+	--color-fg: #d6fbff;
+	--color-muted: #5f7f8c;
+	--color-accent: #00f0ff;
+	--color-danger: #ff2bd6;
+	--color-ok: #b6ff00;
+}
+
+:root {
+	color-scheme: dark;
+	--glow-accent: 0 0 0.375rem rgb(0 240 255 / 0.9), 0 0 1.125rem rgb(0 240 255 / 0.4);
+	--glow-danger: 0 0 0.375rem rgb(255 43 214 / 0.9), 0 0 1.125rem rgb(255 43 214 / 0.4);
+	--line: rgb(0 240 255 / 0.55);
+	--line-dim: rgb(0 240 255 / 0.3);
+}
+
+/* Base size by screen height, in whole steps (16 / 20 / 24px): every rem in the
+   app is then a whole or half pixel, instead of the arbitrary fractions a fluid
+   size produced. Everything is in rem, so the whole layout scales with it. */
+html {
+	font-size: 100%;
+	@media (min-height: 75rem) {
+		font-size: 125%; /* 1440p and up */
+	}
+	@media (min-height: 125rem) {
+		font-size: 150%; /* 4K */
+	}
+}
+
+body {
+	@apply font-sans text-fg antialiased;
+	line-height: 1.5;
+	background:
+		linear-gradient(rgb(0 240 255 / 0.05) 1px, transparent 1px) 0 0 / 2rem 2rem,
+		linear-gradient(90deg, rgb(0 240 255 / 0.05) 1px, transparent 1px) 0 0 / 2rem 2rem,
+		radial-gradient(80vw 50vh at 50% 110%, rgb(255 43 214 / 0.18), transparent 70%),
+		var(--color-surface);
+	background-attachment: fixed;
+}
+
+/* Scanlines over everything (can be turned off in dev, see CrtToggle.svelte) */
+html:not(.no-crt) body::after {
+	content: '';
+	position: fixed;
+	inset: 0;
+	pointer-events: none;
+	background: repeating-linear-gradient(0deg, rgb(0 0 0 / 0.25) 0 1px, transparent 1px 0.1875rem);
+}
+
+:focus-visible {
+	outline: 0.125rem solid var(--color-accent);
+	outline-offset: 0.1875rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		transition: none !important;
+		animation: none !important;
+	}
+}
+
+/* --- Cut-corner frame ----------------------------------------------------------
+ * A box with its top-right and bottom-left corners cut at 45°, and a 1px frame
+ * that follows the cuts. Set --cut (corner size), --frame (frame color) and
+ * --fill (background).
+ *
+ * Built only from things the browser paints on the same pixel grid, so the frame
+ * stays closed whatever the box size (text widths are rarely whole pixels):
+ * - a real CSS border for the straight edges (always snapped to whole pixels),
+ * - a mask that removes the two corners (painted like the border, unlike clip-path),
+ * - two 1px gradient bands for the diagonals.
+ * In a 45° gradient, lengths are measured perpendicular to the diagonal:
+ * a corner cut of --cut px sits at --cut × 0.7071 from the corner.
+ */
+@utility cut-frame {
+	--cut-d: calc(var(--cut) * 0.7071);
+	border: 1px solid var(--frame);
+	background:
+		linear-gradient(
+				225deg,
+				transparent calc(var(--cut-d) - 0.5px),
+				var(--frame) calc(var(--cut-d) - 0.5px) calc(var(--cut-d) + 1px),
+				transparent calc(var(--cut-d) + 1px)
+			)
+			border-box,
+		linear-gradient(
+				45deg,
+				transparent calc(var(--cut-d) - 0.5px),
+				var(--frame) calc(var(--cut-d) - 0.5px) calc(var(--cut-d) + 1px),
+				transparent calc(var(--cut-d) + 1px)
+			)
+			border-box,
+		var(--fill) border-box;
+	mask:
+		linear-gradient(225deg, transparent var(--cut-d), #000 var(--cut-d)) border-box,
+		linear-gradient(45deg, transparent var(--cut-d), #000 var(--cut-d)) border-box;
+	mask-composite: intersect;
+}
+
+/* --- Surfaces ---------------------------------------------------------------- */
+
+@utility panel {
+	@apply cut-frame;
+	--cut: 1.125rem;
+	--frame: var(--line);
+	--fill: linear-gradient(180deg, rgb(0 240 255 / 0.06), rgb(0 0 0 / 0.6));
+	padding: 1.5rem;
+}
+
+@utility module {
+	padding: 0.75rem 1rem;
+	background: rgb(0 240 255 / 0.03);
+	border: 1px dashed var(--line-dim);
+}
+
+/* Sunk in: fields, displays, drop zone */
+@utility recess {
+	background: #000;
+	border: 1px solid rgb(0 240 255 / 0.35);
+	box-shadow: inset 0 0 0.75rem rgb(0 240 255 / 0.08);
+}
+
+/* A strip holding a group of buttons (tabs, options) */
+@utility tray {
+	@apply inline-flex flex-wrap gap-1.5 p-1.5 recess;
+}
+
+@utility input {
+	@apply min-h-9 px-3.5 py-2 text-sm text-fg recess outline-none placeholder:text-muted;
+	&:focus {
+		border-color: var(--color-accent);
+	}
+}
+
+/* A display: counters, values, the transcript */
+@utility well {
+	@apply text-accent tabular-nums recess;
+	text-shadow: var(--glow-accent);
+}
+
+@utility label {
+	@apply text-xs font-bold tracking-wide text-muted uppercase;
+}
+
+@utility heading {
+	@apply text-xl font-bold tracking-[0.12em] text-fg uppercase;
+	font-family: var(--font-heading);
+	text-shadow:
+		0 0 0.625rem rgb(0 240 255 / 0.6),
+		0.125rem 0 rgb(255 43 214 / 0.6);
+}
+
+/* Section title inside a page (a step below heading) */
+@utility subheading {
+	@apply heading text-base;
+}
+
+@utility font-strong {
+	@apply font-bold;
+}
+
+/* --- Buttons ------------------------------------------------------------------ */
+
+@utility key {
+	@apply inline-flex min-h-9 cursor-pointer items-center justify-center gap-2 cut-frame px-4 py-1.5 text-sm font-bold tracking-[0.06em] text-fg uppercase select-none;
+	--cut: 0.5rem;
+	--frame: var(--line);
+	--fill: transparent;
+	transition: color 120ms;
+	&:hover:not(:disabled) {
+		--fill: rgb(0 240 255 / 0.12);
+	}
+	&:disabled {
+		@apply cursor-not-allowed opacity-40;
+	}
+}
+
+/* Sidebar menu entry: text only, like a terminal menu */
+@utility nav-item {
+	@apply flex min-h-9 w-full cursor-pointer items-center gap-2 border-l-2 border-transparent px-3 py-2 text-left text-sm font-bold tracking-[0.08em] text-muted uppercase transition-colors;
+	&:hover {
+		@apply text-fg;
+		background: rgb(0 240 255 / 0.06);
+	}
+}
+
+@utility nav-item-active {
+	@apply border-accent text-accent;
+	background: rgb(0 240 255 / 0.1);
+	text-shadow: var(--glow-accent);
+	&:hover {
+		@apply text-accent;
+	}
+}
+
+/* Selected tab or option */
+@utility key-active {
+	color: #000;
+	--fill: var(--color-accent);
+	--frame: var(--color-accent);
+	&:hover:not(:disabled) {
+		--fill: var(--color-accent);
+	}
+}
+
+/* Main action */
+@utility key-primary {
+	@apply key;
+	color: #000;
+	--fill: var(--color-danger);
+	--frame: #ff8be9;
+	&:hover:not(:disabled) {
+		--fill: var(--color-danger);
+		filter: brightness(1.12);
+	}
+}
+
+/* Delete / remove */
+@utility key-danger {
+	@apply key size-9 p-0 text-danger;
+	--frame: rgb(255 43 214 / 0.6);
+}
+
+/* --- Slider ----------------------------------------------------------------------- */
+
+/* The filled part comes from the --fill custom property (0–100%). */
+@utility fader {
+	@apply h-7 w-full cursor-pointer appearance-none bg-transparent;
+	&::-webkit-slider-runnable-track {
+		height: 0.375rem;
+		background:
+			linear-gradient(90deg, var(--color-accent) var(--fill, 0%), transparent 0) no-repeat,
+			#000;
+		border: 1px solid rgb(0 240 255 / 0.35);
+	}
+	&::-webkit-slider-thumb {
+		appearance: none;
+		margin-top: calc(-0.375rem - 1px); /* centers the thumb on the track */
+		width: 1.125rem;
+		height: 1.125rem;
+		background: var(--color-accent);
+		box-shadow: 0 0 0.625rem var(--color-accent);
+	}
+	&::-moz-range-track {
+		height: 0.375rem;
+		background: #000;
+		border: 1px solid rgb(0 240 255 / 0.35);
+	}
+	&::-moz-range-progress {
+		height: 0.375rem;
+		background: var(--color-accent);
+	}
+	&::-moz-range-thumb {
+		width: 1.125rem;
+		height: 1.125rem;
+		border: none;
+		border-radius: 0;
+		background: var(--color-accent);
+	}
+}
+
+/* --- Switch (see Toggle.svelte) ---------------------------------------------------- */
+
+@utility switch-track {
+	@apply relative h-6 w-11 shrink-0 recess;
+}
+
+@utility switch-knob {
+	@apply absolute top-[0.1875rem] left-[0.1875rem] size-4 bg-muted transition-transform duration-150;
+}
+
+@utility switch-knob-on {
+	@apply translate-x-5 bg-accent;
+	box-shadow: 0 0 0.625rem var(--color-accent);
+}
+
+/* --- Lights ------------------------------------------------------------------------ */
+
+@utility led {
+	@apply inline-block size-2 shrink-0 rounded-full;
+	background: rgb(127 127 127 / 0.35);
+}
+
+@utility led-on {
+	@apply led bg-accent;
+	box-shadow: 0 0 0.5rem var(--color-accent);
+}
+
+@utility led-green {
+	@apply led bg-ok;
+	box-shadow: 0 0 0.5rem var(--color-ok);
+}
+
+@utility led-red {
+	@apply led bg-danger;
+	box-shadow: 0 0 0.5rem var(--color-danger);
+}
