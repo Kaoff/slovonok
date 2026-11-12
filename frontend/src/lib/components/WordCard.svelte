@@ -44,7 +44,8 @@
 	}
 </script>
 
-<article class="space-y-4 panel pt-6 {word.enabled ? '' : 'saturate-50'}">
+<!-- A disabled word is shown entirely in grey: frame, buttons, counter, selected options -->
+<article class="space-y-4 panel pt-6 transition-[filter] {word.enabled ? '' : 'grayscale'}">
 	<header class="flex flex-wrap items-center gap-3">
 		<Toggle bind:checked={word.enabled} title={t('word.enabled')} />
 		<input
@@ -55,7 +56,7 @@
 			bind:value={word.word}
 		/>
 		<div class="flex items-center gap-2" title={t('word.count')}>
-			<span class="min-w-12 well px-2 py-1 text-center text-lg tabular-nums">{word.count}</span>
+			<span class="min-w-12 px-2 py-1 text-center text-lg well tabular-nums">{word.count}</span>
 			<button
 				class="key text-xs"
 				disabled={word.count === 0}
@@ -101,7 +102,7 @@
 			{#each selected as punishment, i (punishment.id)}
 				<li class="flex items-center gap-2 module py-1.5 text-sm">
 					{#if word.punishments.strategy === 'escalation'}
-						<span class="w-7 well py-0.5 text-center text-xs tabular-nums">{i + 1}</span>
+						<span class="w-7 py-0.5 text-center text-xs well tabular-nums">{i + 1}</span>
 					{/if}
 					<span class="flex-1">{punishment.name || punishment.file}</span>
 					<span class="label text-xs">{t(`type.${punishment.type}`)}</span>
