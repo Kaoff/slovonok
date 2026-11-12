@@ -1,0 +1,74 @@
+/* Built-in look of the words list (Cybercore).
+   Loaded only when "Custom CSS" is off. The panel's "Insert the default style" button
+   copies this file into the custom CSS box, as a starting point.
+
+   The panel's size, color, alignment, position and counter settings only set the
+   variables below; with custom CSS you are free to use them or not. */
+:root {
+  --color: #00f0ff;
+  --size: 1.75rem;
+  --alert: #ff2bd6;
+  --justify: flex-start; /* top: flex-start, middle: center, bottom: flex-end */
+  --items: flex-start;   /* left: flex-start, center: center, right: flex-end */
+  --count: block;        /* none hides the counters */
+}
+
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+}
+
+/* The list: one .word per forbidden word, stacked in the body. */
+body {
+  box-sizing: border-box;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: var(--justify);
+  align-items: var(--items);
+  gap: .5em;
+  font-size: var(--size);
+  font-family: "Orbitron", sans-serif;
+  font-weight: 700;
+  color: var(--color);
+}
+
+.word {
+  --c: var(--color);
+  display: flex;
+  align-items: center;
+  gap: .75em;
+  padding: .25em .75em;
+  background: #05060bcc;
+  border: 1px solid var(--c);
+  box-shadow: 0 0 .4em color-mix(in srgb, var(--c) 60%, transparent);
+  text-shadow: 0 0 .4em var(--c);
+}
+
+.text {
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-weight: 400;
+  letter-spacing: .08em;
+  white-space: pre;
+}
+
+.count {
+  display: var(--count);
+  min-width: 1.6em;
+  padding: 0 .35em;
+  text-align: center;
+  font-weight: 900;
+  font-size: .85em;
+  color: #05060b;
+  background: var(--c);
+  text-shadow: none;
+}
+
+/* While the "hit" animation plays (a word was said) */
+.word.hit-shake,
+.word.hit-pulse,
+.word.hit-flash,
+.word.hit-glitch { --c: var(--alert); }

@@ -1,0 +1,63 @@
+/* Animations chosen in the panel. Motion only (transform, opacity, filter): no look, so they
+   work with the built-in style and with custom CSS alike. The page adds one class to a .word:
+     enter-<name>  a word appears            fade slide pop glitch
+     hit-<name>    the word was said         shake pulse flash glitch
+     exit-<name>   a word disappears         fade slide shrink glitch
+   Override them in custom CSS, e.g. `.word.enter-fade { animation-duration: 2s; }`. */
+
+.word.enter-fade   { animation: enter-fade .5s ease-out backwards; }
+.word.enter-slide  { animation: enter-slide .5s ease-out backwards; }
+.word.enter-pop    { animation: enter-pop .5s cubic-bezier(.2, 1.4, .4, 1) backwards; }
+.word.enter-glitch { animation: enter-glitch .9s linear backwards; }
+
+.word.hit-shake    { animation: hit-shake .9s ease-out; }
+.word.hit-pulse    { animation: hit-pulse .6s ease-out; }
+.word.hit-flash    { animation: hit-flash .7s ease-out; }
+.word.hit-glitch   { animation: hit-glitch .8s linear; }
+
+.word.exit-fade    { animation: exit-fade .5s ease-in forwards; }
+.word.exit-slide   { animation: exit-slide .5s ease-in forwards; }
+.word.exit-shrink  { animation: exit-shrink .5s ease-in forwards; }
+.word.exit-glitch  { animation: exit-glitch .7s linear forwards; }
+
+@keyframes enter-fade  { from { opacity: 0; } }
+@keyframes enter-slide { from { opacity: 0; transform: translateX(-1.5em); } }
+@keyframes enter-pop   { from { opacity: 0; transform: scale(.5); } 60% { opacity: 1; transform: scale(1.12); } }
+@keyframes enter-glitch {
+  0%   { opacity: 0; transform: scale(.6); filter: brightness(3); }
+  15%  { opacity: 1; transform: scale(1.15); }
+  25%  { opacity: .2; }
+  35%  { opacity: 1; }
+  45%  { opacity: .4; }
+  60%  { opacity: 1; transform: none; filter: brightness(1.6); }
+  100% { filter: none; }
+}
+
+@keyframes hit-shake {
+  0%   { transform: scale(1.18) translateX(-.15em); }
+  10%  { transform: scale(1.18) translateX(.15em); }
+  20%  { transform: scale(1.18) translateX(-.1em); }
+  30%  { transform: scale(1.12) translateX(.1em); }
+  100% { transform: none; }
+}
+@keyframes hit-pulse { 40% { transform: scale(1.25); } }
+@keyframes hit-flash { 0% { filter: brightness(4); } 100% { filter: none; } }
+@keyframes hit-glitch {
+  0%   { transform: translateX(-.2em) skewX(-12deg); filter: hue-rotate(90deg); }
+  20%  { transform: translateX(.2em) skewX(10deg); filter: hue-rotate(-60deg) brightness(2); }
+  40%  { transform: translateX(-.1em); filter: none; opacity: .5; }
+  60%  { transform: translateX(.15em) skewX(-6deg); filter: hue-rotate(40deg); opacity: 1; }
+  100% { transform: none; filter: none; }
+}
+
+@keyframes exit-fade   { to { opacity: 0; } }
+@keyframes exit-slide  { to { opacity: 0; transform: translateX(1.5em); } }
+@keyframes exit-shrink { to { opacity: 0; transform: scale(0); } }
+@keyframes exit-glitch {
+  0%   { opacity: 1; }
+  15%  { opacity: .2; transform: translateX(-.15em) skewX(10deg); filter: brightness(2); }
+  30%  { opacity: 1; transform: none; filter: none; }
+  50%  { opacity: .3; transform: translateX(.15em); }
+  70%  { opacity: .8; }
+  100% { opacity: 0; transform: scale(.8); filter: brightness(3); }
+}

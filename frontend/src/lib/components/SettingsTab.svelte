@@ -7,6 +7,7 @@
 	import Segmented from '../ui/Segmented.svelte';
 	import Slider from '../ui/Slider.svelte';
 	import Toggle from '../ui/Toggle.svelte';
+	import WordsPreview from './WordsPreview.svelte';
 
 	const config = $derived(app.config!);
 
@@ -19,11 +20,26 @@
 	const overlayUrl = 'http://localhost:8765/overlay/';
 	const wordsOverlayUrl = 'http://localhost:8765/overlay/words/';
 
-	// Selectors of overlay/words/index.html: keep them stable, users' CSS relies on them.
-	const wordsCssExample = `.word { border-radius: 1em; background: #000; }
-.text { font-family: serif; letter-spacing: 0; }
-.count { display: none; }
-.word.hit { --c: gold !important; }`;
+	const enterAnimations = ['none', 'fade', 'slide', 'pop', 'glitch'] as const;
+	const exitAnimations = ['none', 'fade', 'slide', 'shrink', 'glitch'] as const;
+	const hitAnimations = ['none', 'shake', 'pulse', 'flash', 'glitch'] as const;
+
+	let preview = $state<WordsPreview>();
+	let cssError = $state(false);
+
+	/** Starts the custom CSS from the built-in look (the same file the overlay loads without custom CSS). */
+	async function insertDefaultCss() {
+		const words = config.display.words;
+		if (words.custom_css.trim() && !confirm(t('settings.wordsCssDefaultConfirm'))) return;
+		try {
+			const response = await fetch('/overlay/words/default.css');
+			if (!response.ok) throw new Error(String(response.status));
+			words.custom_css = await response.text();
+			cssError = false;
+		} catch {
+			cssError = true;
+		}
+	}
 
 	const alignments = $derived<{ value: WordsAlign; label: string }[]>([
 		{ value: 'left', label: t('settings.align.left') },
@@ -170,42 +186,95 @@
 			</div>
 			<span class="block text-xs text-muted">{t('settings.wordsOverlayHint')}</span>
 		</div>
-		<Slider
-			bind:value={config.display.words.font_size}
-			label={t('settings.wordsFontSize')}
-			min={1}
-			max={5}
-			step={0.25}
-			format={(v) => `${v} rem`}
-		/>
-		<label class="flex items-center gap-3">
-			<span class="label">{t('settings.wordsColor')}</span>
-			<input
-				type="color"
-				class="h-8 w-12 cursor-pointer p-1 recess"
-				bind:value={config.display.words.color}
-			/>
-		</label>
-		<div class="flex flex-wrap items-center gap-x-8 gap-y-3">
-			<div class="space-y-1.5">
-				<span class="label">{t('settings.wordsAlign')}</span>
-				<Segmented bind:value={config.display.words.align} options={alignments} />
-			</div>
-			<div class="space-y-1.5">
-				<span class="label">{t('settings.wordsPosition')}</span>
-				<Segmented bind:value={config.display.words.position} options={positions} />
-			</div>
+		<div class="space-y-1.5">
+			<span class="label">{t('settings.wordsPreview')}</span>
+			<WordsPreview bind:this={preview} />
+			<span class="block text-xs text-muted">{t('settings.wordsPreviewHint')}</span>
 		</div>
-		<Toggle bind:checked={config.display.words.show_count} label={t('settings.wordsShowCount')} />
-		<label class="block space-y-1.5">
-			<span class="label">{t('settings.wordsCss')}</span>
-			<textarea
-				class="block h-40 input w-full font-mono text-sm"
-				spellcheck="false"
-				placeholder={wordsCssExample}
-				bind:value={config.display.words.custom_css}></textarea>
-			<span class="block text-xs text-muted">{t('settings.wordsCssHint')}</span>
-		</label>
+
+		<fieldset class="space-y-3">
+			<legend class="mb-2 label">{t('settings.wordsAnimations')}</legend>
+			{#each [{ kind: 'enter', label: t('settings.wordsEnter'), names: enterAnimations }, { kind: 'hit', label: t('settings.wordsHit'), names: hitAnimations }, { kind: 'exit', label: t('settings.wordsExit'), names: exitAnimations }] as const as row (row.kind)}
+				{@const key = `${row.kind}_animation` as const}
+				<div class="flex items-center gap-3">
+					<span class="w-32 text-sm">{row.label}</span>
+					<select
+						class="input flex-1"
+						value={config.display.words[key]}
+						onchange={(e) => {
+							// @ts-expect-error each row has its own union of names
+							config.display.words[key] = e.currentTarget.value;
+							preview?.play(row.kind, e.currentTarget.value);
+						}}
+					>
+						{#each row.names as name (name)}
+							<option value={name}>{t(`anim.${name}`)}</option>
+						{/each}
+					</select>
+					<button
+						class="key text-xs"
+						disabled={config.display.words[key] === 'none'}
+						onclick={() => preview?.play(row.kind, config.display.words[key])}
+						>{t('settings.wordsPlay')}</button
+					>
+				</div>
+			{/each}
+		</fieldset>
+
+		<Toggle
+			bind:checked={config.display.words.custom_css_enabled}
+			label={t('settings.wordsCssEnabled')}
+			hint={t('settings.wordsCssEnabledHint')}
+		/>
+
+		{#if config.display.words.custom_css_enabled}
+			<div class="space-y-1.5">
+				<div class="flex items-center justify-between gap-3">
+					<span class="label">{t('settings.wordsCss')}</span>
+					<button class="key text-xs" onclick={insertDefaultCss}
+						>{t('settings.wordsCssDefault')}</button
+					>
+				</div>
+				<textarea
+					class="block h-64 input w-full font-mono text-sm"
+					spellcheck="false"
+					aria-label={t('settings.wordsCss')}
+					bind:value={config.display.words.custom_css}></textarea>
+				{#if cssError}<span class="block text-xs text-danger"
+						>{t('settings.wordsCssDefaultError')}</span
+					>{/if}
+				<span class="block text-xs text-muted">{t('settings.wordsCssHint')}</span>
+			</div>
+		{:else}
+			<!-- The built-in look: these settings only feed variables of default.css -->
+			<Slider
+				bind:value={config.display.words.font_size}
+				label={t('settings.wordsFontSize')}
+				min={1}
+				max={5}
+				step={0.25}
+				format={(v) => `${v} rem`}
+			/>
+			<label class="flex items-center gap-3">
+				<span class="label">{t('settings.wordsColor')}</span>
+				<input
+					type="color"
+					class="h-8 w-12 cursor-pointer p-1 recess"
+					bind:value={config.display.words.color}
+				/>
+			</label>
+			<div class="flex flex-wrap items-center gap-x-8 gap-y-3">
+				<div class="space-y-1.5">
+					<span class="label">{t('settings.wordsAlign')}</span>
+					<Segmented bind:value={config.display.words.align} options={alignments} />
+				</div>
+				<div class="space-y-1.5">
+					<span class="label">{t('settings.wordsPosition')}</span>
+					<Segmented bind:value={config.display.words.position} options={positions} />
+				</div>
+			</div>
+			<Toggle bind:checked={config.display.words.show_count} label={t('settings.wordsShowCount')} />
+		{/if}
 	</section>
 
 	<section class="space-y-3 panel pt-6">

@@ -73,7 +73,14 @@ class WordsDisplay(BaseModel):
     align: Literal["left", "center", "right"] = "left"
     position: Literal["top", "middle", "bottom"] = "top"
     show_count: bool = True
-    custom_css: str = ""  # appended after the built-in styles, so it can override anything
+    # Animations (overlay/words/animations.css)
+    enter_animation: Literal["none", "fade", "slide", "pop", "glitch"] = "slide"
+    exit_animation: Literal["none", "fade", "slide", "shrink", "glitch"] = "fade"
+    hit_animation: Literal["none", "shake", "pulse", "flash", "glitch"] = "shake"
+    # When enabled, the built-in look (overlay/words/default.css) is not loaded at all:
+    # custom_css is the only style, animations aside.
+    custom_css_enabled: bool = False
+    custom_css: str = ""
 
 
 class Display(BaseModel):

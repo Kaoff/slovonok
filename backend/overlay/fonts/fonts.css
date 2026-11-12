@@ -1,0 +1,5 @@
+/* Fonts are served by the app: the overlay must not depend on the internet.
+   Always loaded, so custom CSS can use "Orbitron" (700, 900) and "Share Tech Mono" (400). */
+@font-face { font-family: "Orbitron"; font-weight: 700; src: url("orbitron-latin-700-normal.woff2") format("woff2"); }
+@font-face { font-family: "Orbitron"; font-weight: 900; src: url("orbitron-latin-900-normal.woff2") format("woff2"); }
+@font-face { font-family: "Share Tech Mono"; font-weight: 400; src: url("share-tech-mono-latin-400-normal.woff2") format("woff2"); }

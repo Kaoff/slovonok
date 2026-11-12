@@ -6,6 +6,9 @@ export type MediaType = 'sound' | 'image' | 'video';
 export type WordDisplayMode = 'shown' | 'hidden' | 'partial';
 export type WordsAlign = 'left' | 'center' | 'right';
 export type WordsPosition = 'top' | 'middle' | 'bottom';
+export type EnterAnimation = 'none' | 'fade' | 'slide' | 'pop' | 'glitch';
+export type ExitAnimation = 'none' | 'fade' | 'slide' | 'shrink' | 'glitch';
+export type HitAnimation = 'none' | 'shake' | 'pulse' | 'flash' | 'glitch';
 
 export interface ChromaKey {
 	enabled: boolean;
@@ -52,6 +55,10 @@ export interface Config {
 			align: WordsAlign;
 			position: WordsPosition;
 			show_count: boolean;
+			enter_animation: EnterAnimation;
+			exit_animation: ExitAnimation;
+			hit_animation: HitAnimation;
+			custom_css_enabled: boolean;
 			custom_css: string;
 		};
 	};
