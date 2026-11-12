@@ -42,20 +42,29 @@ class AppState {
 	#saveTimer: ReturnType<typeof setTimeout> | undefined;
 	#savePromise: Promise<void> | null = null;
 	#nextId = 0;
+	#init: Promise<void> | null = null;
+	#ws: WebSocket | null = null;
 
-	async init() {
-		this.#setConfig(await api.getConfig());
-		this.connect();
-		this.refreshMedia();
-		this.refreshStatus();
-		setInterval(() => this.refreshStatus(), 3000);
+	/** Safe to call several times (e.g. when the page remounts during development):
+	 * a second WebSocket would deliver every event twice. */
+	init(): Promise<void> {
+		this.#init ??= (async () => {
+			this.#setConfig(await api.getConfig());
+			this.connect();
+			this.refreshMedia();
+			this.refreshStatus();
+			setInterval(() => this.refreshStatus(), 3000);
+		})();
+		return this.#init;
 	}
 
 	// --- Server events ---------------------------------------------------
 
 	connect() {
+		if (this.#ws && this.#ws.readyState <= WebSocket.OPEN) return; // already connecting or open
 		const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
 		const ws = new WebSocket(`${protocol}://${location.host}/ws`);
+		this.#ws = ws;
 		ws.onopen = () => (this.connected = true);
 		ws.onmessage = (e) => this.#handle(JSON.parse(e.data));
 		ws.onclose = () => {

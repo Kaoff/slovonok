@@ -130,6 +130,8 @@ class Engine:
             self.listener = None
 
     def on_listener_error(self, message: str) -> None:
+        if threading.current_thread() is not self.listener:
+            return
         self.listener_error = message
         print(f"⚠ Listening stopped: {message}")
         self.broadcaster.publish({"type": "error", "message": message})
@@ -146,6 +148,10 @@ class Engine:
     # --- Detection and punishments -------------------------------------
 
     def on_text(self, text: str, final: bool) -> None:
+        # Ignore a listener that is being replaced but hasn't stopped yet:
+        # two listeners at once would publish every sentence twice.
+        if threading.current_thread() is not self.listener:
+            return
         self.broadcaster.publish({"type": "transcription", "text": text, "final": final})
         if final and text:
             print(f"   {text}")
