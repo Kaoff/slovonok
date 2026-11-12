@@ -84,7 +84,7 @@ cd ..\frontend
 npm run check; npm run lint; npm run test:unit -- --run --project server
 ```
 
-(Run vitest from `D:\...` with an uppercase drive letter, see CLAUDE.md.)
+(Run vitest and the frontend build from `D:\...` with an uppercase drive letter: from `d:\...` vitest loads twice and Vite writes absolute font URLs into the CSS.)
 
 ## Building and releasing
 

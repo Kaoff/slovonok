@@ -21,3 +21,6 @@ frontend/.svelte-kit/
 backend/data/
 packaging/*.log
 packaging/*.err
+
+# Notes for the AI assistant, local only
+CLAUDE.md
