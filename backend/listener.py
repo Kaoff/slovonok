@@ -5,13 +5,14 @@ from __future__ import annotations
 import json
 import queue
 import threading
-from pathlib import Path
 from typing import Callable
 
 import sounddevice as sd
+
+import paths
 from vosk import KaldiRecognizer, Model, SetLogLevel
 
-MODELS_DIR = Path(__file__).parent / "models"
+MODELS_DIR = paths.MODELS_DIR
 
 SetLogLevel(-1)  # silences Kaldi's verbose logs
 _models: dict[str, Model] = {}  # a model takes a few seconds to load: keep it around

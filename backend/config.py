@@ -9,7 +9,9 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-DATA_DIR = Path(__file__).parent / "data"
+import paths
+
+DATA_DIR = paths.DATA_DIR
 MEDIA_DIR = DATA_DIR / "media"
 CONFIG_FILE = DATA_DIR / "config.json"
 

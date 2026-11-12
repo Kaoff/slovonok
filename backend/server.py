@@ -17,6 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+import paths
 from config import MEDIA_DIR, Config, ConfigStore
 from detection import Rule
 from engine import Engine
@@ -24,8 +25,8 @@ from media import make_playable, media_type, needs_conversion
 
 HOST = "127.0.0.1"
 PORT = 8765
-OVERLAY_DIR = Path(__file__).parent / "overlay"
-PANEL_DIR = Path(__file__).parent.parent / "frontend" / "build"  # SvelteKit static build
+OVERLAY_DIR = paths.OVERLAY_DIR
+PANEL_DIR = paths.PANEL_DIR  # SvelteKit static build
 
 MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 # SLOVONOK_NO_LISTENING=1: starts without the microphone (tests, overlay development).

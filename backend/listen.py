@@ -18,11 +18,12 @@ from pathlib import Path
 import sounddevice as sd
 from vosk import KaldiRecognizer, Model, SetLogLevel
 
+import paths
 from detection import Detector, Rule
 from listener import resolve_microphone
 from phonetics import create_phonemizer
 
-DEFAULT_MODEL = Path(__file__).parent / "models" / "vosk-model-small-fr-0.22"
+DEFAULT_MODEL = paths.MODELS_DIR / "vosk-model-small-fr-0.22"
 
 
 def main():
