@@ -109,7 +109,10 @@ function playVideo(p) {
 
   const cleanup = () => { stopRenderer(); visual.remove(); video.remove(); };
   video.onended = cleanup;
-  video.onerror = cleanup;
+  video.onerror = () => {
+    console.error(`Cannot play ${p.file}:`, video.error?.message ?? video.error?.code);
+    cleanup();
+  };
   start(video).catch(cleanup);
 }
 

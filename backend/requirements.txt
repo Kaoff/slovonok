@@ -6,3 +6,4 @@ uvicorn[standard]
 pycaw; sys_platform == "win32"
 PySide6
 python-multipart
+imageio-ffmpeg

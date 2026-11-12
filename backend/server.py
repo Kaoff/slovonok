@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import os
 import shutil
+import threading
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -18,26 +19,41 @@ from pydantic import BaseModel
 
 from config import MEDIA_DIR, Config, ConfigStore
 from engine import Engine
+from media import make_playable, media_type, needs_conversion
 
 HOST = "127.0.0.1"
 PORT = 8765
 OVERLAY_DIR = Path(__file__).parent / "overlay"
 PANEL_DIR = Path(__file__).parent.parent / "frontend" / "build"  # SvelteKit static build
 
-MEDIA_TYPES = {
-    "sound": {".mp3", ".wav", ".ogg", ".opus", ".m4a", ".flac", ".aac"},
-    "video": {".mp4", ".webm", ".mov", ".mkv"},
-    "image": {".png", ".jpg", ".jpeg", ".gif", ".webp", ".avif", ".svg"},
-}
-
 MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 # SLOVONOK_NO_LISTENING=1: starts without the microphone (tests, overlay development).
 engine = Engine(ConfigStore(), listening_enabled=os.environ.get("SLOVONOK_NO_LISTENING") != "1")
 
 
+def convert_existing_media() -> None:
+    """Converts media added before conversion existed (or copied by hand into data/media),
+    and points the punishments that use them to the converted files."""
+    renamed = {}
+    for file in sorted(MEDIA_DIR.iterdir()):
+        try:
+            if file.is_file() and needs_conversion(file):
+                print(f"🎞  Converting {file.name} so the screen window can play it…")
+                renamed[file.name] = make_playable(file).name
+        except Exception as e:  # ffmpeg missing, broken file…
+            print(f"⚠ {e}")
+    if renamed:
+        config = engine.store.read()
+        for punishment in config.punishments:
+            punishment.file = renamed.get(punishment.file, punishment.file)
+        engine.update_config(config)
+        print(f"🎞  Converted: {', '.join(f'{a} → {b}' for a, b in renamed.items())}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     engine.broadcaster.loop = asyncio.get_running_loop()
+    threading.Thread(target=convert_existing_media, daemon=True, name="media").start()
     yield
     engine.stop_listening()
 
@@ -97,17 +113,12 @@ def screens():
 # --- Media -----------------------------------------------------------------
 
 
-def media_type(file: Path) -> str | None:
-    suffix = file.suffix.lower()
-    return next((t for t, suffixes in MEDIA_TYPES.items() if suffix in suffixes), None)
-
-
 @app.get("/api/media")
 def list_media():
     return [
         {"file": f.name, "type": media_type(f), "size": f.stat().st_size}
         for f in sorted(MEDIA_DIR.iterdir(), key=lambda f: f.name.lower())
-        if f.is_file() and media_type(f)
+        if f.is_file() and media_type(f) and ".part." not in f.name  # skip conversions in progress
     ]
 
 
@@ -123,6 +134,12 @@ def upload_media(file: UploadFile):
         n += 1
     with target.open("wb") as out:
         shutil.copyfileobj(file.file, out)
+    try:
+        # e.g. an H.264 MP4 becomes a VP9 WebM: the screen window can't play H.264
+        target = make_playable(target)
+    except Exception as e:
+        target.unlink(missing_ok=True)
+        raise HTTPException(422, str(e)) from e
     return {"file": target.name, "type": media_type(target), "size": target.stat().st_size}
 
 
