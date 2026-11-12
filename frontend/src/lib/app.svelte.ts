@@ -18,6 +18,7 @@ interface Detection {
 }
 
 const SAVE_DELAY = 500;
+const SAVE_RETRY_DELAY = 3000;
 const MAX_LINES = 50;
 
 /** Config without word counters: counters change on their own and are never "edited". */
@@ -65,7 +66,14 @@ class AppState {
 		const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
 		const ws = new WebSocket(`${protocol}://${location.host}/ws`);
 		this.#ws = ws;
-		ws.onopen = () => (this.connected = true);
+		ws.onopen = () => {
+			this.connected = true;
+			// Back after a restart: send the edits that couldn't be saved meanwhile.
+			if (this.saveState === 'error') {
+				clearTimeout(this.#saveTimer);
+				this.#save();
+			}
+		};
 		ws.onmessage = (e) => this.#handle(JSON.parse(e.data));
 		ws.onclose = () => {
 			this.connected = false;
@@ -148,8 +156,12 @@ class AppState {
 				this.saveState = serialize(this.config!) === json ? 'saved' : 'pending';
 			})
 			.catch((error: Error) => {
+				// Usually the app was restarting: keep the edits and try again, so they are
+				// never silently lost (the server would keep running with the old config).
 				this.saveState = 'error';
 				this.saveError = error.message;
+				clearTimeout(this.#saveTimer);
+				this.#saveTimer = setTimeout(() => this.#save(), SAVE_RETRY_DELAY);
 			})
 			.finally(() => (this.#savePromise = null));
 		await this.#savePromise;
