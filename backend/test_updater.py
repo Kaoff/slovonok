@@ -12,7 +12,14 @@ import time
 import unittest
 from pathlib import Path
 
-from updater import DEFAULT_DOWNLOAD_PREFIX, UpdateError, Updater, is_newer, parse_version
+from updater import (
+    DEFAULT_DOWNLOAD_PREFIX,
+    UpdateError,
+    Updater,
+    installer_command,
+    is_newer,
+    parse_version,
+)
 
 INSTALLER = b"MZ" + b"installer bytes " * 70_000  # about 1.1 MB: several chunks
 
@@ -95,6 +102,17 @@ class UpdaterTest(unittest.TestCase):
                 return True
             time.sleep(0.02)
         return False
+
+
+class TestInstallerCommand(unittest.TestCase):
+    def test_waits_for_the_app_then_runs_the_installer_silently(self):
+        command = installer_command(Path(r"C:\Users\o'brien\AppData\Slovonok-Setup-0.2.0.exe"), 4242)
+        self.assertEqual(command[0], "powershell.exe")
+        script = command[-1]
+        self.assertIn("Wait-Process -Id 4242", script)
+        self.assertLess(script.index("Wait-Process"), script.index("Start-Process"))
+        self.assertIn("'/SILENT'", script)
+        self.assertIn("o''brien", script)  # a quote in the path can't break out of the string
 
 
 class TestVersions(unittest.TestCase):

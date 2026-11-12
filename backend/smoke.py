@@ -9,6 +9,7 @@ it on the freshly built package, and refuses to make an installer if it fails.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -42,21 +43,35 @@ def run_checks(base: str, engine) -> list[dict]:
             pass
         return "writable"
 
+    def inside_package(path: str, what: str) -> None:
+        """In the packaged app, nothing may come from the machine that built it: a test run on the
+        build machine would pass with the system's espeak, and fail on the user's."""
+        if paths.FROZEN:
+            assert Path(path).resolve().is_relative_to(paths.RESOURCE_DIR.resolve()), f"{what} is outside the package: {path}"
+
     def phonemizer() -> str:
         sounds = engine.phonemize(["pakwaf", "époux"])
         assert sounds[0] == "pakwaf" and sounds[1], f"unexpected sounds: {sounds}"
+        library = os.environ.get("PHONEMIZER_ESPEAK_LIBRARY", "")
+        if paths.FROZEN:
+            assert library, "PHONEMIZER_ESPEAK_LIBRARY is not set"
+        if library:
+            inside_package(library, "espeak library")
         return " / ".join(sounds)
 
     def vosk_model() -> str:
         from listener import load_model
 
-        load_model(engine.store.read().model)
-        return engine.store.read().model
+        name = engine.store.read().model
+        load_model(name)
+        inside_package(str(paths.MODELS_DIR / name), "Vosk model")
+        return name
 
     def ffmpeg() -> str:
         import imageio_ffmpeg
 
         exe = imageio_ffmpeg.get_ffmpeg_exe()
+        inside_package(exe, "ffmpeg")
         out = subprocess.run([exe, "-version"], capture_output=True, text=True, timeout=30, check=True)
         return out.stdout.splitlines()[0]
 

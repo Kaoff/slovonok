@@ -124,7 +124,9 @@ class PanelWindow(QWebEngineView):
 
     def closeEvent(self, event) -> None:
         self._settings.setValue("panel/geometry", self.saveGeometry())
-        if self.quitting or not QSystemTrayIcon.isSystemTrayAvailable():
+        # Also let it close when Windows is shutting down or logging off: Qt asks every window
+        # to close then, and a window that refuses would hold the whole shutdown back.
+        if self.quitting or QGuiApplication.isSavingSession() or not QSystemTrayIcon.isSystemTrayAvailable():
             event.accept()
         else:
             event.ignore()

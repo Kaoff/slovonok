@@ -36,6 +36,16 @@ HOST = "127.0.0.1"
 PORT = int(os.environ.get("SLOVONOK_PORT", "8765"))  # the override is for tests: OBS URLs assume 8765
 
 
+def hold_app_mutex() -> object:
+    """A named mutex that exists while the app runs: the installer and uninstaller check it
+    (AppMutex in installer.iss) and ask to close the app first. Keep the returned handle alive."""
+    if sys.platform != "win32":
+        return None
+    import ctypes
+
+    return ctypes.windll.kernel32.CreateMutexW(None, False, "Slovonok.SingleInstance")
+
+
 def port_is_taken() -> bool:
     with socket.socket() as probe:
         return probe.connect_ex((HOST, PORT)) == 0
@@ -109,6 +119,7 @@ def main() -> int:
     icon = QIcon(str(paths.ICON_FILE))
     qt_app.setWindowIcon(icon)
 
+    mutex = hold_app_mutex()  # noqa: F841 - released when the process ends
     single = shell.SingleInstance()
     if not args.smoke:
         if single.activate_running():
@@ -177,6 +188,8 @@ def run_app(qt_app: QApplication, single: shell.SingleInstance, engine, updater,
         )
         tray.show()
     single.show_requested.connect(panel.show_panel)
+    # Windows is shutting down or logging off: leave instead of hiding to the tray
+    qt_app.commitDataRequest.connect(lambda *_: setattr(panel, "quitting", True))
 
     # Updates: the updater runs in worker threads, the bridge hands its news to the Qt thread
     bridge = shell.UpdateBridge()

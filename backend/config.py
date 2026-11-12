@@ -124,25 +124,9 @@ class Config(BaseModel):
     punishments: list[Punishment] = Field(default_factory=list)
 
 
-DEFAULT_CONFIG = Config(
-    words=[
-        Word(
-            id="w-epoux",
-            word="époux",
-            punishments=PunishmentSelection(strategy="all", ids=["p-mistake", "p-jumpscare"]),
-        )
-    ],
-    punishments=[
-        Punishment(id="p-mistake", name="Mistake", type="sound", file="mistake.mp3"),
-        Punishment(
-            id="p-jumpscare",
-            name="Jumpscare",
-            type="video",
-            file="jumpscare.mp4",
-            chroma_key=ChromaKey(enabled=True),
-        ),
-    ],
-)
+# First run: one example word and nothing else. No punishment: the media they would play are
+# the user's own files, which the app can't ship.
+DEFAULT_CONFIG = Config(words=[Word(id="w-epoux", word="époux")])
 
 
 class ConfigStore:

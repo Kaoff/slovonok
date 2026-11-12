@@ -9,7 +9,20 @@ screen and in OBS. Speech recognition is in French; the code is in English.
 - `backend/data/`: config (`config.json`) and media files (`media/`), not versioned
 - `frontend/`: config panel (SvelteKit, static build served by the backend)
 
-## Setup (Windows)
+## Install (users)
+
+Download `Slovonok-Setup-<version>.exe` from the
+[latest release](https://github.com/Kaoff/slovonok/releases/latest) and run it. It installs for
+the current user (no administrator rights). The exe is not code-signed yet, so Windows SmartScreen
+shows a warning on the first run: *More info → Run anyway*.
+
+- The app lives in the **system tray**: closing its window keeps it listening; right-click the
+  icon to open the panel, pause listening or quit.
+- Your words, punishments, media and logs are in `%APPDATA%\Slovonok`.
+- **Updates**: the app looks for a newer release at startup and every few hours, and from
+  *Settings → Check for updates*. It tells you, and installs when you click *Install and restart*.
+
+## Setup for development (Windows)
 
 ### Backend
 
@@ -58,6 +71,32 @@ By default the app listens to Windows' default **communications** recording devi
 (Sound settings → Recording); another microphone can be picked in the panel.
 
 `python server.py` runs the server alone, without the screen window.
+
+`python main.py --background` starts hidden in the tray. `python main.py --smoke report.json` runs
+the self-test that `packaging/build.ps1` uses to check a packaged build.
+
+## Tests
+
+```powershell
+cd backend
+python -m unittest test_detection test_words test_fuzzy test_engine test_updater
+cd ..\frontend
+npm run check; npm run lint; npm run test:unit -- --run --project server
+```
+
+(Run vitest from `D:\...` with an uppercase drive letter, see CLAUDE.md.)
+
+## Building and releasing
+
+`powershell -File packaging\build.ps1` builds the installer (PyInstaller + Inno Setup) and checks
+the package with a self-test first. See [packaging/RELEASING.md](packaging/RELEASING.md) for the
+whole procedure, including how an update reaches the installed apps.
+
+## License
+
+Slovonok is free software under the **GNU General Public License v3.0** (see `LICENSE`), because
+it ships GPL components (espeak-ng, phonemizer, FFmpeg). Third-party components and their licenses
+are listed in `THIRD_PARTY_NOTICES.md`.
 
 ### Testing without speaking
 

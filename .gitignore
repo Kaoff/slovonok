@@ -5,10 +5,12 @@ backend/models/*
 __pycache__/
 *.pyc
 
-# Desktop app build
+# Desktop app build (the spec in packaging/ is versioned; PyInstaller's other output is not)
 backend/build/
 backend/dist/
-*.spec
+packaging/build/
+packaging/dist/
+packaging/output/
 
 # Frontend
 frontend/node_modules/

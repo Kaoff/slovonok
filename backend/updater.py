@@ -33,7 +33,7 @@ DEFAULT_DOWNLOAD_PREFIX = f"https://github.com/{REPOSITORY}/releases/download/"
 INSTALLER_NAME = re.compile(r"^Slovonok-Setup-(\d+\.\d+\.\d+)\.exe$")
 TIMEOUT = 15  # seconds, for each network request
 CHECK_EVERY = 6 * 3600  # while the app runs (a stream can last long)
-INSTALLER_ARGS = ["/SILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CLOSEAPPLICATIONS"]
+INSTALLER_ARGS = ["/SILENT", "/SUPPRESSMSGBOXES", "/NORESTART"]
 USER_AGENT = "Slovonok-updater"
 
 
@@ -54,13 +54,22 @@ def _get(url: str) -> bytes:
         return response.read()
 
 
+def installer_command(installer: Path, pid: int) -> list[str]:
+    """PowerShell waits for the app (pid) to be gone, then starts the installer: the installer
+    refuses to run while the app is open, and closing it takes a few seconds."""
+    quoted = str(installer).replace("'", "''")
+    arguments = ",".join(f"'{a}'" for a in INSTALLER_ARGS)
+    script = (
+        f"Wait-Process -Id {pid} -Timeout 90 -ErrorAction SilentlyContinue; "
+        f"Start-Process -FilePath '{quoted}' -ArgumentList {arguments}"
+    )
+    return ["powershell.exe", "-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", script]
+
+
 def launch_installer(installer: Path) -> None:
-    """Starts the installer a few seconds from now, detached: the app is gone by then and
-    the installer can replace its files (it also closes it if it is still there)."""
-    # One string, not a list: cmd.exe has its own quoting rules (/s strips the outer quotes)
-    command = f'cmd.exe /d /s /c "ping -n 4 127.0.0.1 >nul & "{installer}" {" ".join(INSTALLER_ARGS)}"'
+    """Starts, detached from the app, what will run the installer once the app has quit."""
     flags = getattr(subprocess, "DETACHED_PROCESS", 0) | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
-    subprocess.Popen(command, creationflags=flags, close_fds=True)
+    subprocess.Popen(installer_command(installer, os.getpid()), creationflags=flags, close_fds=True)
 
 
 class UpdateError(Exception):
