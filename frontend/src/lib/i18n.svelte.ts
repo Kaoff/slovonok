@@ -162,7 +162,10 @@ const en = {
 	'settings.position.bottom': 'Bottom',
 
 	'type.add_word': 'New word',
-	'punishments.addWord': 'Add-a-word punishment',
+	'punishments.kind.media': 'Sound, video or image',
+	'punishments.kind.mediaHint': 'Plays a file from the media library.',
+	'punishments.kind.add_word': 'Add a forbidden word',
+	'punishments.kind.add_wordHint': 'Adds a word from a pool to the forbidden words.',
 	'addWord.testHint': 'Really adds a word from the pool (it stays unless it has a lifetime).',
 	'addWord.pool': 'Word pool',
 	'addWord.poolPlaceholder': 'One word or expression per line',
@@ -368,7 +371,10 @@ const fr: Dictionary = {
 	'settings.position.bottom': 'Bas',
 
 	'type.add_word': 'Nouveau mot',
-	'punishments.addWord': 'Punition « ajouter un mot »',
+	'punishments.kind.media': 'Son, vidéo ou image',
+	'punishments.kind.mediaHint': 'Joue un fichier de la médiathèque.',
+	'punishments.kind.add_word': 'Ajouter un mot interdit',
+	'punishments.kind.add_wordHint': "Ajoute aux mots interdits un mot tiré d'un lot.",
 	'addWord.testHint': "Ajoute vraiment un mot du lot (il reste, sauf s'il a une durée de vie).",
 	'addWord.pool': 'Lot de mots',
 	'addWord.poolPlaceholder': 'Un mot ou une expression par ligne',

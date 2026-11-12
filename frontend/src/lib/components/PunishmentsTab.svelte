@@ -4,6 +4,7 @@
 	import { t } from '../i18n.svelte';
 	import type { MediaFile, Punishment } from '../types';
 	import MediaLibrary from './MediaLibrary.svelte';
+	import Dropdown from '../ui/Dropdown.svelte';
 	import AddWordCard from './AddWordCard.svelte';
 	import PunishmentCard from './PunishmentCard.svelte';
 
@@ -18,6 +19,20 @@
 			file: media?.file ?? ''
 		});
 	}
+
+	/** What "New punishment" can create (more types will come: OBS commands…). */
+	const kinds = $derived<{ value: 'media' | 'add_word'; label: string; hint: string }[]>([
+		{
+			value: 'media',
+			label: t('punishments.kind.media'),
+			hint: t('punishments.kind.mediaHint')
+		},
+		{
+			value: 'add_word',
+			label: t('punishments.kind.add_word'),
+			hint: t('punishments.kind.add_wordHint')
+		}
+	]);
 
 	function addWordPunishment() {
 		config.punishments.push({ ...blank(), id: newId('p'), type: 'add_word' });
@@ -71,11 +86,11 @@
 				<h2 class="heading">{t('punishments.title')}</h2>
 				<p class="text-sm text-muted">{t('punishments.subtitle')}</p>
 			</div>
-			<div class="flex flex-wrap gap-2">
-				<button class="key-primary" onclick={() => addPunishment()}>+ {t('punishments.add')}</button
-				>
-				<button class="key" onclick={addWordPunishment}>+ {t('punishments.addWord')}</button>
-			</div>
+			<Dropdown
+				label={t('punishments.add')}
+				items={kinds}
+				onselect={(kind) => (kind === 'media' ? addPunishment() : addWordPunishment())}
+			/>
 		</div>
 
 		{#each config.punishments as punishment, i (punishment.id)}
