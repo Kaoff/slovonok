@@ -363,9 +363,13 @@ const dictionaries: Record<Locale, Dictionary> = { en, fr };
 class I18n {
 	locale = $state<Locale>('fr');
 
-	/** Translates a key, replacing {name} placeholders with params. */
-	t = (key: MessageKey, params: Record<string, string | number> = {}): string =>
-		dictionaries[this.locale][key].replace(/\{(\w+)\}/g, (_, name) => String(params[name] ?? ''));
+	/** Translates a key, replacing {name} placeholders with params.
+	 *  A key built from server data can be missing (e.g. `anim.${name}` with a backend older
+	 *  than the panel): the key itself is shown instead of crashing the whole page. */
+	t = (key: MessageKey, params: Record<string, string | number> = {}): string => {
+		const message = dictionaries[this.locale][key] ?? en[key] ?? key;
+		return message.replace(/\{(\w+)\}/g, (_, name) => String(params[name] ?? ''));
+	};
 }
 
 export const i18n = new I18n();
