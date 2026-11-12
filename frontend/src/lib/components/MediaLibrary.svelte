@@ -54,7 +54,7 @@
 	</div>
 
 	<label
-		class="flex cursor-pointer flex-col items-center justify-center gap-1 px-4 py-6 text-sm recess transition {dragging
+		class="relative flex cursor-pointer flex-col items-center justify-center gap-1 px-4 py-6 text-sm recess transition {dragging
 			? 'outline-2 outline-accent'
 			: ''}"
 		ondragover={(e) => {
