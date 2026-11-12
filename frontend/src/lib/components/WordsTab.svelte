@@ -17,11 +17,14 @@
 			enabled: true,
 			count: 0,
 			display_mode: 'shown',
+			auto: false,
+			expires_at: null,
 			punishments: { strategy: 'all', ids: [] }
 		});
 	}
 
 	function removeWord(id: string) {
+		app.dismissWord(id);
 		const index = config.words.findIndex((w) => w.id === id);
 		if (index >= 0) config.words.splice(index, 1);
 	}

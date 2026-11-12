@@ -160,9 +160,10 @@ def delete_media(name: str):
 
 @app.post("/api/punishments/{punishment_id}/test")
 def test_punishment(punishment_id: str):
-    if not engine.trigger_punishment(punishment_id):
+    result = engine.trigger_punishment(punishment_id)
+    if result is None:
         raise HTTPException(404, "Unknown punishment")
-    return {"ok": True}
+    return {"ok": True, **result}
 
 
 class Simulation(BaseModel):

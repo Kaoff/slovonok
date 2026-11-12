@@ -3,6 +3,7 @@
 export type Mode = 'phonetic' | 'exact';
 export type Strategy = 'all' | 'random' | 'escalation';
 export type MediaType = 'sound' | 'image' | 'video';
+export type PunishmentType = MediaType | 'add_word';
 export type WordDisplayMode = 'shown' | 'hidden' | 'partial';
 export type WordsAlign = 'left' | 'center' | 'right';
 export type WordsPosition = 'top' | 'middle' | 'bottom';
@@ -18,14 +19,30 @@ export interface ChromaKey {
 	spill: number;
 }
 
+export interface PunishmentSelection {
+	strategy: Strategy;
+	ids: string[];
+}
+
+/** Options of the "add a forbidden word" punishment. */
+export interface AddWordSettings {
+	pool: string[];
+	mode: Mode;
+	display_mode: WordDisplayMode;
+	punishments_from: 'trigger' | 'list';
+	punishments: PunishmentSelection;
+	duration: number; // seconds, 0 = until removed by hand
+}
+
 export interface Punishment {
 	id: string;
 	name: string;
-	type: MediaType;
+	type: PunishmentType;
 	file: string;
 	volume: number;
 	duration: number;
 	chroma_key: ChromaKey;
+	add_word: AddWordSettings;
 }
 
 export interface Word {
@@ -38,7 +55,10 @@ export interface Word {
 	enabled: boolean;
 	count: number;
 	display_mode: WordDisplayMode;
-	punishments: { strategy: Strategy; ids: string[] };
+	punishments: PunishmentSelection;
+	/** Added by a punishment: the server decides when it exists. */
+	auto: boolean;
+	expires_at: number | null; // Unix time, in seconds
 }
 
 export interface Config {
@@ -46,6 +66,7 @@ export interface Config {
 	microphone: string | number | null;
 	model: string;
 	cooldown: number;
+	max_active_words: number;
 	display: {
 		screen: { enabled: boolean; monitor: number; sound: boolean; hide_from_capture: boolean };
 		overlay: { sound: boolean };
@@ -83,6 +104,15 @@ export interface ScreenInfo {
 	width: number;
 	height: number;
 	primary: boolean;
+}
+
+export type AddWordResult = 'added' | 'no_candidate' | 'max_reached';
+
+/** What the server answers to "test this punishment". */
+export interface PunishmentTest {
+	ok: true;
+	result: 'played' | AddWordResult;
+	word?: string;
 }
 
 export interface Status {

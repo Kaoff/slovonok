@@ -6,14 +6,16 @@ import asyncio
 import random
 import threading
 import time
+import uuid
 from typing import Any, Callable
 
 from fastapi import WebSocket
 
-from config import Config, ConfigStore, Word
+from config import Config, ConfigStore, Punishment, Word
 from detection import Detector, Rule
 from listener import Listener
 from phonetics import create_phonemizer
+from words import build_word, pick_word
 
 
 class Broadcaster:
@@ -61,6 +63,7 @@ class Engine:
 
         self.detector = Detector([], self.phonemizer)
         self.apply(store.read())
+        self.expire_words()  # words whose lifetime ended while the app was closed
         threading.Thread(target=self._watch_config_file, daemon=True, name="config").start()
 
     # --- Configuration -------------------------------------------------
@@ -104,9 +107,10 @@ class Engine:
         return True
 
     def _watch_config_file(self) -> None:
-        """Reloads data/config.json when it is edited by hand (until the panel exists)."""
+        """Every second: removes expired words, and reloads data/config.json if edited by hand."""
         while True:
             time.sleep(1)
+            self.expire_words()
             try:
                 config = self.store.reload_if_modified()
             except ValueError as e:
@@ -185,11 +189,18 @@ class Engine:
             return [ids[min(word.count, len(ids)) - 1]]
         return list(ids)
 
-    def trigger_punishment(self, punishment_id: str, config: Config | None = None, word: Word | None = None) -> bool:
+    def trigger_punishment(
+        self, punishment_id: str, config: Config | None = None, word: Word | None = None
+    ) -> dict[str, Any] | None:
+        """Runs a punishment. None if it doesn't exist, else what happened:
+        {"result": "played"} for media, {"result": "added", "word": …} or
+        {"result": "no_candidate" | "max_reached"} for "add_word"."""
         config = config or self.store.read()
         punishment = next((p for p in config.punishments if p.id == punishment_id), None)
         if punishment is None:
-            return False
+            return None
+        if punishment.type == "add_word":
+            return self.add_word(punishment, config, word)
         for callback in self.before_punishment:
             callback()
         self.broadcaster.publish({
@@ -197,7 +208,47 @@ class Engine:
             "punishment": punishment.model_dump(),
             "word": word.word if word else None,
         })
-        return True
+        return {"result": "played"}
+
+    # --- "Add a forbidden word" punishment -----------------------------
+
+    def add_word(self, punishment: Punishment, config: Config, trigger: Word | None) -> dict[str, Any]:
+        # Fresh words: an earlier punishment of the same detection may have added one already
+        config = self.store.read()
+        active = [w for w in config.words if w.enabled and w.word.strip()]
+        if config.max_active_words and len(active) >= config.max_active_words:
+            print(f"➕ Not adding a word: {len(active)} active words (limit {config.max_active_words})")
+            return {"result": "max_reached"}
+
+        settings = punishment.add_word
+
+        def usable(text: str) -> bool:
+            if settings.mode == "phonetic" and not self.phonemizer:
+                return False
+            rule = Rule(id="", word=text, mode=settings.mode)
+            with self._lock:
+                return self.detector.can_compile(rule)
+
+        text = pick_word(settings.pool, config.words, accept=usable)
+        if text is None:
+            print(f"➕ '{punishment.name}': no word left in the pool")
+            return {"result": "no_candidate"}
+
+        word = build_word(text, settings, trigger, time.time(), f"w-{uuid.uuid4().hex[:8]}")
+        self.store.add_word(word)
+        self.apply(self.store.read())
+        self.publish_config()
+        lifetime = f" for {settings.duration:g}s" if settings.duration > 0 else ""
+        print(f"➕ New forbidden word: '{text}'{lifetime}")
+        return {"result": "added", "word": text}
+
+    def expire_words(self) -> None:
+        expired = self.store.expire_words(time.time())
+        if not expired:
+            return
+        self.apply(self.store.read())
+        self.publish_config()
+        print(f"➖ Word removed: {', '.join(f'{w.word!r}' for w in expired)}")
 
     def simulate(self, text: str) -> list[str]:
         """Acts as if the microphone heard this text (handy for testing without speaking)."""

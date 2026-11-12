@@ -22,19 +22,33 @@ class ChromaKey(BaseModel):
     spill: float = 0.1  # reduces the green fringe on edges
 
 
-class Punishment(BaseModel):
-    id: str
-    name: str = ""
-    type: Literal["sound", "image", "video"]
-    file: str  # file name in data/media
-    volume: float = 1.0
-    duration: float = 3.0  # images only, in seconds
-    chroma_key: ChromaKey = Field(default_factory=ChromaKey)
-
-
 class PunishmentSelection(BaseModel):
     strategy: Literal["all", "random", "escalation"] = "all"
     ids: list[str] = Field(default_factory=list)
+
+
+class AddWordSettings(BaseModel):
+    """Options of the "add_word" punishment: adds a forbidden word to the list."""
+
+    pool: list[str] = Field(default_factory=list)  # candidates, one is picked at random
+    mode: Literal["phonetic", "exact"] = "phonetic"
+    display_mode: Literal["shown", "hidden", "partial"] = "shown"
+    # Punishments of the new word: copy the triggering word's, or use `punishments` below
+    # (also used when there is no triggering word, e.g. when testing the punishment).
+    punishments_from: Literal["trigger", "list"] = "trigger"
+    punishments: PunishmentSelection = Field(default_factory=PunishmentSelection)
+    duration: float = 0.0  # seconds before the word is removed; 0 = until removed by hand
+
+
+class Punishment(BaseModel):
+    id: str
+    name: str = ""
+    type: Literal["sound", "image", "video", "add_word"]
+    file: str = ""  # file name in data/media (not used by add_word)
+    volume: float = 1.0
+    duration: float = 3.0  # images only, in seconds
+    chroma_key: ChromaKey = Field(default_factory=ChromaKey)
+    add_word: AddWordSettings = Field(default_factory=AddWordSettings)
 
 
 class Word(BaseModel):
@@ -48,6 +62,9 @@ class Word(BaseModel):
     count: int = 0
     display_mode: Literal["shown", "hidden", "partial"] = "shown"  # in the words overlay
     punishments: PunishmentSelection = Field(default_factory=PunishmentSelection)
+    # Words added by an "add_word" punishment: the server decides when they exist (see ConfigStore.replace)
+    auto: bool = False
+    expires_at: float | None = None  # Unix time at which the word is removed
 
 
 class ScreenDisplay(BaseModel):
@@ -94,6 +111,7 @@ class Config(BaseModel):
     microphone: str | int | None = None  # "Name, API" or index; None = Windows default communications mic
     model: str = "vosk-model-small-fr-0.22"  # folder in models/
     cooldown: float = 5.0
+    max_active_words: int = 10  # "add_word" punishments stop here; 0 = no limit
     display: Display = Field(default_factory=Display)
     words: list[Word] = Field(default_factory=list)
     punishments: list[Punishment] = Field(default_factory=list)
@@ -139,16 +157,42 @@ class ConfigStore:
             return self._config.model_copy(deep=True)
 
     def replace(self, config: Config, keep_counts: bool = True) -> Config:
-        """Replaces the config. By default, word counters keep their stored value:
-        they change between the moment the panel reads the config and saves it."""
+        """Replaces the config, except what the server owns:
+        - word counters keep their stored value (they change between the moment the panel
+          reads the config and saves it) ;
+        - words added by a punishment are not resurrected once the server removed them
+          (expired), and keep their expiry: a panel with an outdated word list can't undo that.
+        """
         with self._lock:
-            if keep_counts:
-                counts = {w.id: w.count for w in self._config.words}
-                for word in config.words:
-                    word.count = counts.get(word.id, 0)
+            current = {w.id: w for w in self._config.words}
+            words = []
+            for word in config.words:
+                old = current.get(word.id)
+                if old is None and word.auto:
+                    continue
+                if old:
+                    word.auto, word.expires_at = old.auto, old.expires_at
+                if keep_counts:
+                    word.count = old.count if old else 0
+                words.append(word)
+            config.words = words
             self._config = config
             self.save()
             return config.model_copy(deep=True)
+
+    def add_word(self, word: Word) -> None:
+        with self._lock:
+            self._config.words.append(word)
+            self.save()
+
+    def expire_words(self, now: float) -> list[Word]:
+        """Removes the words whose lifetime is over and returns them."""
+        with self._lock:
+            expired = [w for w in self._config.words if w.expires_at is not None and w.expires_at <= now]
+            if expired:
+                self._config.words = [w for w in self._config.words if w not in expired]
+                self.save()
+            return [w.model_copy(deep=True) for w in expired]
 
     def reset_count(self, word_id: str) -> Word | None:
         with self._lock:

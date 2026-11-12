@@ -1,20 +1,12 @@
 <script lang="ts">
-	import { app } from '../app.svelte';
 	import { api } from '../api';
 	import { t } from '../i18n.svelte';
-	import type { Mode, Strategy, Word, WordDisplayMode } from '../types';
+	import type { Mode, Word, WordDisplayMode } from '../types';
 	import Segmented from '../ui/Segmented.svelte';
 	import Toggle from '../ui/Toggle.svelte';
+	import PunishmentPicker from './PunishmentPicker.svelte';
 
 	let { word = $bindable(), onremove }: { word: Word; onremove: () => void } = $props();
-
-	const punishments = $derived(app.config!.punishments);
-	const selected = $derived(
-		word.punishments.ids
-			.map((id) => punishments.find((p) => p.id === id))
-			.filter((p) => p !== undefined)
-	);
-	const available = $derived(punishments.filter((p) => !word.punishments.ids.includes(p.id)));
 
 	const modes = $derived<{ value: Mode; label: string }[]>([
 		{ value: 'phonetic', label: t('word.phonetic') },
@@ -25,24 +17,17 @@
 		{ value: 'partial', label: t('word.display.partial') },
 		{ value: 'hidden', label: t('word.display.hidden') }
 	]);
-	const strategies = $derived<{ value: Strategy; label: string }[]>([
-		{ value: 'all', label: t('word.strategy.all') },
-		{ value: 'random', label: t('word.strategy.random') },
-		{ value: 'escalation', label: t('word.strategy.escalation') }
-	]);
-	const strategyHint = $derived(t(`word.strategy.${word.punishments.strategy}Hint`));
-
-	function addPunishment(e: Event) {
-		const select = e.currentTarget as HTMLSelectElement;
-		if (select.value) word.punishments.ids.push(select.value);
-		select.value = '';
-	}
-
-	function move(index: number, delta: number) {
-		const ids = word.punishments.ids;
-		const [id] = ids.splice(index, 1);
-		ids.splice(index + delta, 0, id);
-	}
+	// Words added by a punishment can expire: show the time left
+	let now = $state(Date.now());
+	$effect(() => {
+		if (word.expires_at === null) return;
+		const timer = setInterval(() => (now = Date.now()), 1000);
+		return () => clearInterval(timer);
+	});
+	const remaining = $derived(
+		word.expires_at === null ? null : Math.max(0, Math.ceil(word.expires_at - now / 1000))
+	);
+	const clock = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
 	function confirmRemove() {
 		if (!word.word || confirm(t('word.confirmDelete', { word: word.word }))) onremove();
@@ -76,6 +61,14 @@
 		>
 	</header>
 
+	{#if word.auto}
+		<p class="text-xs text-accent">
+			＋ {t('word.auto')}{remaining === null
+				? ''
+				: ` · ${t('word.expiresIn', { time: clock(remaining) })}`}
+		</p>
+	{/if}
+
 	<div class="space-y-3 module">
 		<Segmented bind:value={word.mode} options={modes} />
 		<div class="flex flex-wrap gap-x-8 gap-y-3">
@@ -104,56 +97,5 @@
 		<p class="text-xs text-muted">{t('word.displayHint')}</p>
 	</section>
 
-	<section class="space-y-3">
-		<div class="flex flex-wrap items-center gap-3">
-			<h3 class="label text-base">{t('word.punishments')}</h3>
-			<Segmented bind:value={word.punishments.strategy} options={strategies} />
-		</div>
-		<p class="text-xs text-muted">{strategyHint}</p>
-
-		<ol class="space-y-1.5">
-			{#each selected as punishment, i (punishment.id)}
-				<li class="flex items-center gap-2 module py-1.5 text-sm">
-					{#if word.punishments.strategy === 'escalation'}
-						<span class="w-7 py-0.5 text-center text-xs well tabular-nums">{i + 1}</span>
-					{/if}
-					<span class="flex-1">{punishment.name || punishment.file}</span>
-					<span class="label text-xs">{t(`type.${punishment.type}`)}</span>
-					{#if word.punishments.strategy === 'escalation'}
-						<button
-							class="key px-2 py-1"
-							title={t('word.moveUp')}
-							aria-label={t('word.moveUp')}
-							disabled={i === 0}
-							onclick={() => move(i, -1)}>↑</button
-						>
-						<button
-							class="key px-2 py-1"
-							title={t('word.moveDown')}
-							aria-label={t('word.moveDown')}
-							disabled={i === selected.length - 1}
-							onclick={() => move(i, 1)}>↓</button
-						>
-					{/if}
-					<button
-						class="key-danger py-1"
-						title={t('word.remove')}
-						aria-label={t('word.remove')}
-						onclick={() => word.punishments.ids.splice(i, 1)}>✕</button
-					>
-				</li>
-			{/each}
-		</ol>
-
-		{#if available.length > 0}
-			<select class="input" onchange={addPunishment}>
-				<option value="">+ {t('word.addPunishment')}</option>
-				{#each available as punishment (punishment.id)}
-					<option value={punishment.id}>{punishment.name || punishment.file}</option>
-				{/each}
-			</select>
-		{:else if punishments.length === 0}
-			<p class="text-xs text-muted">{t('word.noPunishments')}</p>
-		{/if}
-	</section>
+	<PunishmentPicker bind:selection={word.punishments} />
 </article>

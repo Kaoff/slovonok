@@ -82,6 +82,20 @@
 		</label>
 
 		<label class="block space-y-1.5">
+			<span class="label">{t('settings.maxWords')}</span>
+			<span class="flex items-center gap-3">
+				<input
+					type="number"
+					class="input w-20 text-accent"
+					min="0"
+					step="1"
+					bind:value={config.max_active_words}
+				/>
+				<span class="text-sm text-muted">{t('settings.maxWordsHint')}</span>
+			</span>
+		</label>
+
+		<label class="block space-y-1.5">
 			<span class="label">{t('settings.cooldown')}</span>
 			<span class="flex items-center gap-3">
 				<input

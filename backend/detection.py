@@ -93,9 +93,19 @@ class Detector:
         rules = list(rules)
         if any(r.mode == "phonetic" for r in rules) and not self.phonemizer:
             raise ValueError("A phonetic rule requires a phonemizer")
+        previous = {r.id: r._last for r in self.rules}
         for r in rules:
             r._pattern = self._compile(r)
+            r._last = previous.get(r.id, 0.0)  # a reload must not reset the cooldowns
         self.rules = rules
+
+    def can_compile(self, r: Rule) -> bool:
+        """False if the rule cannot be used (e.g. a word with no pronounceable sound)."""
+        try:
+            self._compile(r)
+        except ValueError:
+            return False
+        return True
 
     def _compile(self, r: Rule) -> re.Pattern:
         if r.mode == "exact":

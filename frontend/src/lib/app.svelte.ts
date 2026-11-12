@@ -39,6 +39,8 @@ class AppState {
 	transcript = $state<TranscriptLine[]>([]);
 	detections = $state<Detection[]>([]);
 
+	/** Words added by a punishment that the user deleted before the delete was saved. */
+	#dismissed = new Set<string>();
 	#savedJson = '';
 	#saveTimer: ReturnType<typeof setTimeout> | undefined;
 	#savePromise: Promise<void> | null = null;
@@ -84,9 +86,13 @@ class AppState {
 	#handle(event: ServerEvent) {
 		switch (event.type) {
 			case 'config':
-				// Don't overwrite edits that haven't been saved yet: only take the counters.
+				// Don't overwrite edits that haven't been saved yet: only take the counters,
+				// and the words the server added or removed itself (punishment, expiry).
 				if (this.saveState === 'saved') this.#setConfig(event.config);
-				else this.#mergeCounts(event.config.words);
+				else {
+					this.#mergeCounts(event.config.words);
+					this.#mergeServerWords(event.config.words);
+				}
 				break;
 
 			case 'transcription': {
@@ -129,6 +135,27 @@ class AppState {
 			const word = this.config?.words.find((w) => w.id === incoming.id);
 			if (word) word.count = incoming.count;
 		}
+	}
+
+	/** Words added by a punishment (or removed when they expire) while edits are unsaved:
+	 * the server owns their existence, so they follow it without touching the other edits. */
+	#mergeServerWords(incoming: Word[]) {
+		if (!this.config) return;
+		const ids = new Set(incoming.map((w) => w.id));
+		const local = this.config.words;
+		for (let i = local.length - 1; i >= 0; i--) {
+			if (local[i].auto && !ids.has(local[i].id)) local.splice(i, 1);
+		}
+		for (const word of incoming) {
+			if (word.auto && !this.#dismissed.has(word.id) && !local.some((w) => w.id === word.id)) {
+				local.push(word);
+			}
+		}
+	}
+
+	/** The user deleted a word: an event must not bring it back before the delete is saved. */
+	dismissWord(id: string) {
+		if (this.config?.words.some((w) => w.id === id && w.auto)) this.#dismissed.add(id);
 	}
 
 	// --- Saving ----------------------------------------------------------

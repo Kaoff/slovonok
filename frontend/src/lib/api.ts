@@ -1,4 +1,4 @@
-import type { Config, MediaFile, Microphones, ScreenInfo, Status } from './types';
+import type { Config, MediaFile, Microphones, PunishmentTest, ScreenInfo, Status } from './types';
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
 	const isForm = body instanceof FormData;
@@ -39,7 +39,7 @@ export const api = {
 	deleteMedia: (file: string) => request('DELETE', `/api/media/${encodeURIComponent(file)}`),
 
 	testPunishment: (id: string) =>
-		request('POST', `/api/punishments/${encodeURIComponent(id)}/test`),
+		request<PunishmentTest>('POST', `/api/punishments/${encodeURIComponent(id)}/test`),
 	simulate: (text: string) => request<{ triggered: string[] }>('POST', '/api/simulate', { text })
 };
 
