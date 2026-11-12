@@ -1,4 +1,4 @@
-# forbidden-word — config panel
+# Slovonok — config panel
 
 SvelteKit single-page app (static build, `adapter-static`), Tailwind CSS 4, Svelte 5 runes.
 

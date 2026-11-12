@@ -1,6 +1,7 @@
-# forbidden-word
+# Slovonok
 
-Detects a forbidden word spoken on stream and triggers punishments on the streamer's
+Slovonok (*slovo*, "word", + *zvonok*, "bell": the word that rings the bell) detects a
+forbidden word spoken on stream and triggers punishments on the streamer's
 screen and in OBS. Speech recognition is in French; the code is in English.
 
 - `backend/`: Python desktop app (microphone, Vosk, phonetics, local server, Qt screen window)

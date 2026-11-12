@@ -31,8 +31,8 @@ MEDIA_TYPES = {
 }
 
 MEDIA_DIR.mkdir(parents=True, exist_ok=True)
-# FW_NO_LISTENING=1: starts without the microphone (tests, overlay development).
-engine = Engine(ConfigStore(), listening_enabled=os.environ.get("FW_NO_LISTENING") != "1")
+# SLOVONOK_NO_LISTENING=1: starts without the microphone (tests, overlay development).
+engine = Engine(ConfigStore(), listening_enabled=os.environ.get("SLOVONOK_NO_LISTENING") != "1")
 
 
 @asynccontextmanager
@@ -42,7 +42,7 @@ async def lifespan(app: FastAPI):
     engine.stop_listening()
 
 
-app = FastAPI(title="forbidden-word", lifespan=lifespan)
+app = FastAPI(title="Slovonok", lifespan=lifespan)
 
 # The panel's dev server (Vite) runs on another port during development.
 app.add_middleware(

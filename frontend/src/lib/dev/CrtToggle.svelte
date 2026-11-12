@@ -1,10 +1,10 @@
 <!-- Development only: turn the CRT scanlines off for readability. Not shown in the build. -->
 <script lang="ts">
-	let crt = $state(localStorage.getItem('fw-crt') !== 'off');
+	let crt = $state(localStorage.getItem('slovonok-crt') !== 'off');
 
 	$effect(() => {
 		document.documentElement.classList.toggle('no-crt', !crt);
-		localStorage.setItem('fw-crt', crt ? 'on' : 'off');
+		localStorage.setItem('slovonok-crt', crt ? 'on' : 'off');
 	});
 </script>
 

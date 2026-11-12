@@ -15,7 +15,7 @@ from PySide6.QtWebEngineWidgets import QWebEngineView
 
 from config import ScreenDisplay
 
-TITLE = "forbidden-word screen overlay"
+TITLE = "Slovonok screen overlay"
 WDA_EXCLUDEFROMCAPTURE = 0x11  # invisible to screen capture (Windows 10 2004+)
 
 

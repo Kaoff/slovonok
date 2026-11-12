@@ -37,7 +37,7 @@
 	});
 </script>
 
-<svelte:head><title>forbidden-word</title></svelte:head>
+<svelte:head><title>Slovonok</title></svelte:head>
 
 <a
 	href="#content"
@@ -50,9 +50,8 @@
 <div class="mx-auto flex h-screen max-w-[100rem] gap-4 p-4">
 	<!-- Sidebar: name, sections, save state -->
 	<header class="flex w-52 shrink-0 flex-col gap-8 panel px-4 py-6">
-		<h1 class="heading text-lg leading-tight">
-			<span class="flex items-center gap-2"><span class="led-on size-2.5"></span>forbidden</span>
-			<span class="block pl-[1.125rem]">word</span>
+		<h1 class="flex items-center gap-2 heading text-lg leading-tight">
+			<span class="led-on size-2.5"></span>Slovonok
 		</h1>
 
 		<nav aria-label={t('nav.label')}>
