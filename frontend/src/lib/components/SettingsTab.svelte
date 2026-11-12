@@ -27,7 +27,7 @@
 	}
 </script>
 
-<div class="space-y-6">
+<div class="space-y-5">
 	<div>
 		<h2 class="heading">{t('settings.title')}</h2>
 		<p class="text-sm text-muted">{t('settings.subtitle')}</p>

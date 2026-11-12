@@ -33,6 +33,9 @@
    size produced. Everything is in rem, so the whole layout scales with it. */
 html {
 	font-size: 100%;
+	/* The app is a fixed-size screen: only its columns scroll, never the page itself */
+	height: 100%;
+	overflow: hidden;
 	@media (min-height: 75rem) {
 		font-size: 125%; /* 1440p and up */
 	}
@@ -42,7 +45,7 @@ html {
 }
 
 body {
-	@apply font-sans text-fg antialiased;
+	@apply h-full overflow-hidden font-sans text-fg antialiased;
 	line-height: 1.5;
 	background:
 		linear-gradient(rgb(0 240 255 / 0.05) 1px, transparent 1px) 0 0 / 2rem 2rem,

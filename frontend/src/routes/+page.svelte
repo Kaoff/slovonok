@@ -47,9 +47,9 @@
 </a>
 
 <!-- Capped width so very wide screens keep the three columns together -->
-<div class="mx-auto flex h-screen max-w-[100rem] gap-4 p-4">
+<div class="mx-auto flex h-dvh max-w-[100rem] gap-4 p-4">
 	<!-- Sidebar: name, sections, save state -->
-	<header class="flex w-52 shrink-0 flex-col gap-8 panel px-4 py-6">
+	<header class="flex min-h-0 w-52 shrink-0 flex-col gap-8 overflow-y-auto panel px-4 py-6">
 		<h1 class="flex items-center gap-2 heading text-lg leading-tight">
 			<span class="led-on size-2.5"></span>Slovonok
 		</h1>
@@ -109,7 +109,7 @@
 		</div>
 	</main>
 
-	<aside class="flex w-80 shrink-0 flex-col gap-4">
+	<aside class="flex min-h-0 w-80 shrink-0 flex-col gap-4">
 		<LivePanel />
 	</aside>
 </div>
