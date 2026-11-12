@@ -139,6 +139,14 @@ function animate(el, className) {
   el.addEventListener("animationend", () => el.classList.remove(className), { once: true });
 }
 
+// The user's CSS goes in its own <style> added last in <head>: it wins over the built-in rules
+// when specificity is equal (the .hit/.added states need a more specific selector or !important).
+const customStyle = document.createElement("style");
+document.head.append(customStyle);
+function applyCustomCss(css) {
+  if (customStyle.textContent !== css) customStyle.textContent = css;
+}
+
 function render(config) {
   const style = config.display?.words ?? {};
   document.documentElement.style.setProperty("--size", `${style.font_size ?? 1.75}rem`);
@@ -146,6 +154,7 @@ function render(config) {
   document.body.dataset.position = style.position ?? "top";
   document.body.dataset.align = style.align ?? "left";
   document.body.dataset.count = String(style.show_count ?? true);
+  applyCustomCss(style.custom_css ?? "");
 
   const active = config.words.filter((w) => w.enabled && w.word.trim());
   const ids = new Set(active.map((w) => w.id));

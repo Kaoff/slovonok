@@ -125,6 +125,9 @@ const en = {
 	'settings.wordsAlign': 'Alignment',
 	'settings.wordsPosition': 'Position',
 	'settings.wordsShowCount': 'Show the counters',
+	'settings.wordsCss': 'Custom CSS',
+	'settings.wordsCssHint':
+		'Applied last, so it overrides the settings above. Classes: .word (row), .text, .count, .hit and .added (animation states). Variables: --color, --size, --alert, --c (row color).',
 	'settings.align.left': 'Left',
 	'settings.align.center': 'Center',
 	'settings.align.right': 'Right',
@@ -273,6 +276,9 @@ const fr: Dictionary = {
 	'settings.wordsAlign': 'Alignement',
 	'settings.wordsPosition': 'Position',
 	'settings.wordsShowCount': 'Afficher les compteurs',
+	'settings.wordsCss': 'CSS personnalisé',
+	'settings.wordsCssHint':
+		"Appliqué en dernier, donc prioritaire sur les réglages ci-dessus. Classes : .word (ligne), .text, .count, .hit et .added (états d'animation). Variables : --color, --size, --alert, --c (couleur de la ligne).",
 	'settings.align.left': 'Gauche',
 	'settings.align.center': 'Centre',
 	'settings.align.right': 'Droite',

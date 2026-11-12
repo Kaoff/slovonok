@@ -19,6 +19,12 @@
 	const overlayUrl = 'http://localhost:8765/overlay/';
 	const wordsOverlayUrl = 'http://localhost:8765/overlay/words/';
 
+	// Selectors of overlay/words/index.html: keep them stable, users' CSS relies on them.
+	const wordsCssExample = `.word { border-radius: 1em; background: #000; }
+.text { font-family: serif; letter-spacing: 0; }
+.count { display: none; }
+.word.hit { --c: gold !important; }`;
+
 	const alignments = $derived<{ value: WordsAlign; label: string }[]>([
 		{ value: 'left', label: t('settings.align.left') },
 		{ value: 'center', label: t('settings.align.center') },
@@ -191,6 +197,15 @@
 			</div>
 		</div>
 		<Toggle bind:checked={config.display.words.show_count} label={t('settings.wordsShowCount')} />
+		<label class="block space-y-1.5">
+			<span class="label">{t('settings.wordsCss')}</span>
+			<textarea
+				class="block h-40 input w-full font-mono text-sm"
+				spellcheck="false"
+				placeholder={wordsCssExample}
+				bind:value={config.display.words.custom_css}></textarea>
+			<span class="block text-xs text-muted">{t('settings.wordsCssHint')}</span>
+		</label>
 	</section>
 
 	<section class="space-y-3 panel pt-6">

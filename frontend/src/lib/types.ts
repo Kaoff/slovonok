@@ -52,6 +52,7 @@ export interface Config {
 			align: WordsAlign;
 			position: WordsPosition;
 			show_count: boolean;
+			custom_css: string;
 		};
 	};
 	words: Word[];

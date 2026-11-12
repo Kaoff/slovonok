@@ -73,6 +73,7 @@ class WordsDisplay(BaseModel):
     align: Literal["left", "center", "right"] = "left"
     position: Literal["top", "middle", "bottom"] = "top"
     show_count: bool = True
+    custom_css: str = ""  # appended after the built-in styles, so it can override anything
 
 
 class Display(BaseModel):
