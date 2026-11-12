@@ -7,6 +7,7 @@
 	import Segmented from '../ui/Segmented.svelte';
 	import Slider from '../ui/Slider.svelte';
 	import Toggle from '../ui/Toggle.svelte';
+	import WordsCssEditor from './WordsCssEditor.svelte';
 	import WordsPreview from './WordsPreview.svelte';
 
 	const config = $derived(app.config!);
@@ -25,21 +26,7 @@
 	const hitAnimations = ['none', 'shake', 'pulse', 'flash', 'glitch'] as const;
 
 	let preview = $state<WordsPreview>();
-	let cssError = $state(false);
-
-	/** Starts the custom CSS from the built-in look (the same file the overlay loads without custom CSS). */
-	async function insertDefaultCss() {
-		const words = config.display.words;
-		if (words.custom_css.trim() && !confirm(t('settings.wordsCssDefaultConfirm'))) return;
-		try {
-			const response = await fetch('/overlay/words/default.css');
-			if (!response.ok) throw new Error(String(response.status));
-			words.custom_css = await response.text();
-			cssError = false;
-		} catch {
-			cssError = true;
-		}
-	}
+	let editorOpen = $state(false);
 
 	const alignments = $derived<{ value: WordsAlign; label: string }[]>([
 		{ value: 'left', label: t('settings.align.left') },
@@ -228,22 +215,11 @@
 		/>
 
 		{#if config.display.words.custom_css_enabled}
-			<div class="space-y-1.5">
-				<div class="flex items-center justify-between gap-3">
-					<span class="label">{t('settings.wordsCss')}</span>
-					<button class="key text-xs" onclick={insertDefaultCss}
-						>{t('settings.wordsCssDefault')}</button
-					>
-				</div>
-				<textarea
-					class="block h-64 input w-full font-mono text-sm"
-					spellcheck="false"
-					aria-label={t('settings.wordsCss')}
-					bind:value={config.display.words.custom_css}></textarea>
-				{#if cssError}<span class="block text-xs text-danger"
-						>{t('settings.wordsCssDefaultError')}</span
-					>{/if}
-				<span class="block text-xs text-muted">{t('settings.wordsCssHint')}</span>
+			<div class="flex flex-wrap items-center gap-3">
+				<button class="key" onclick={() => (editorOpen = true)}
+					>{t('settings.wordsCustomize')}</button
+				>
+				<span class="text-xs text-muted">{t('settings.wordsCustomizeHint')}</span>
 			</div>
 		{:else}
 			<!-- The built-in look: these settings only feed variables of default.css -->
@@ -282,3 +258,5 @@
 		<Segmented bind:value={config.language} options={locales} />
 	</section>
 </div>
+
+<WordsCssEditor bind:open={editorOpen} />

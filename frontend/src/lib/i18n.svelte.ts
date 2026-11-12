@@ -140,6 +140,9 @@ const en = {
 	'settings.wordsCssHint':
 		'Classes: .word (row), .text, .count. Animations add enter-*, hit-* or exit-* to the row. Fonts "Orbitron" and "Share Tech Mono" are available.',
 	'settings.wordsCssDefault': 'Insert the default style',
+	'settings.wordsCustomize': 'Customize',
+	'settings.wordsCustomizeHint': 'Opens a full-screen CSS editor with the live preview.',
+	'settings.wordsCssClose': 'Close',
 	'settings.wordsCssDefaultConfirm': 'Replace your CSS with the default style?',
 	'settings.wordsCssDefaultError': 'Cannot load the default style.',
 	'anim.none': 'None',
@@ -314,6 +317,9 @@ const fr: Dictionary = {
 	'settings.wordsCssHint':
 		'Classes : .word (ligne), .text, .count. Les animations ajoutent enter-*, hit-* ou exit-* à la ligne. Les polices « Orbitron » et « Share Tech Mono » sont disponibles.',
 	'settings.wordsCssDefault': 'Insérer le style par défaut',
+	'settings.wordsCustomize': 'Customiser',
+	'settings.wordsCustomizeHint': "Ouvre un éditeur CSS plein écran avec l'aperçu en direct.",
+	'settings.wordsCssClose': 'Fermer',
 	'settings.wordsCssDefaultConfirm': 'Remplacer votre CSS par le style par défaut ?',
 	'settings.wordsCssDefaultError': 'Impossible de charger le style par défaut.',
 	'anim.none': 'Aucune',
