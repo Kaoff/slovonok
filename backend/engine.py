@@ -6,7 +6,7 @@ import asyncio
 import random
 import threading
 import time
-from typing import Any
+from typing import Any, Callable
 
 from fastapi import WebSocket
 
@@ -45,6 +45,9 @@ class Engine:
         self.listening_enabled = listening_enabled
         self.listener: Listener | None = None
         self.screens: list[dict[str, Any]] = []  # filled by the desktop app (Qt knows the screens)
+        # Called (from any thread) right before a punishment is broadcast: the desktop app
+        # uses it to put the screen window back on top of everything.
+        self.before_punishment: list[Callable[[], None]] = []
         self.listener_error: str | None = None
         self._lock = threading.Lock()
 
@@ -187,6 +190,8 @@ class Engine:
         punishment = next((p for p in config.punishments if p.id == punishment_id), None)
         if punishment is None:
             return False
+        for callback in self.before_punishment:
+            callback()
         self.broadcaster.publish({
             "type": "punishment",
             "punishment": punishment.model_dump(),

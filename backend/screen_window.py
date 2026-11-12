@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import sys
 
-from PySide6.QtCore import Qt, QUrl
+from PySide6.QtCore import Qt, QTimer, QUrl, Signal
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWebEngineCore import QWebEngineSettings
 from PySide6.QtWebEngineWidgets import QWebEngineView
@@ -17,11 +17,41 @@ from config import ScreenDisplay
 
 TITLE = "Slovonok screen overlay"
 WDA_EXCLUDEFROMCAPTURE = 0x11  # invisible to screen capture (Windows 10 2004+)
+HWND_TOPMOST = -1
+SWP_NOSIZE, SWP_NOMOVE, SWP_NOACTIVATE = 0x0001, 0x0002, 0x0010
+KEEP_ON_TOP_INTERVAL = 2000  # ms
+
+
+def _user32():
+    import ctypes
+    from ctypes import wintypes
+
+    user32 = ctypes.WinDLL("user32", use_last_error=True)
+    user32.GetAncestor.argtypes = [wintypes.HWND, wintypes.UINT]
+    user32.GetAncestor.restype = wintypes.HWND
+    user32.SetWindowDisplayAffinity.argtypes = [wintypes.HWND, wintypes.DWORD]
+    user32.SetWindowDisplayAffinity.restype = wintypes.BOOL
+    user32.GetWindowDisplayAffinity.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.DWORD)]
+    user32.GetWindowDisplayAffinity.restype = wintypes.BOOL
+    user32.SetWindowPos.argtypes = [
+        wintypes.HWND, wintypes.HWND, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, wintypes.UINT
+    ]
+    user32.SetWindowPos.restype = wintypes.BOOL
+    return user32
 
 
 class ScreenWindow(QWebEngineView):
+    # Emitted from any thread; the slot runs on the Qt thread, which owns the window.
+    bring_to_front_requested = Signal()
+
     def __init__(self, settings: ScreenDisplay, url: str):
         super().__init__()
+        self.bring_to_front_requested.connect(self.bring_to_front)
+        # The taskbar and other "always on top" windows can end up above us
+        # (e.g. after a click on the taskbar): take the top spot back regularly.
+        self._keep_on_top = QTimer(self)
+        self._keep_on_top.timeout.connect(self.bring_to_front)
+        self._keep_on_top.start(KEEP_ON_TOP_INTERVAL)
         self.hide_from_capture = settings.hide_from_capture
         self.setWindowTitle(TITLE)
         self.setWindowFlags(
@@ -53,8 +83,37 @@ class ScreenWindow(QWebEngineView):
     def showEvent(self, event):
         super().showEvent(event)
         if self.hide_from_capture and sys.platform == "win32":
-            import ctypes
+            # Qt may still (re)create the native window right after showing it,
+            # so apply once the event loop has settled, and once more a bit later.
+            QTimer.singleShot(0, self._exclude_from_capture)
+            QTimer.singleShot(1000, lambda: self._exclude_from_capture(report=True))
 
-            hwnd = int(self.winId())
-            if not ctypes.windll.user32.SetWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE):
-                print("⚠ Could not hide the screen overlay from capture (requires Windows 10 2004+)")
+    def _hwnd(self, user32) -> int:
+        GA_ROOT = 2
+        return user32.GetAncestor(int(self.winId()), GA_ROOT)  # the top-level window
+
+    def bring_to_front(self) -> None:
+        """Puts the window back at the top of the "always on top" windows, without taking focus."""
+        if sys.platform != "win32":
+            self.raise_()
+            return
+        user32 = _user32()
+        user32.SetWindowPos(
+            self._hwnd(user32), HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE
+        )
+
+    def _exclude_from_capture(self, report: bool = False) -> None:
+        import ctypes
+        from ctypes import wintypes
+
+        user32 = _user32()
+        hwnd = self._hwnd(user32)
+        if not user32.SetWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE):
+            error = ctypes.get_last_error()
+            print(f"⚠ Could not hide the screen overlay from capture (error {error}, needs Windows 10 2004+)")
+            return
+        if report:
+            affinity = wintypes.DWORD()
+            user32.GetWindowDisplayAffinity(hwnd, ctypes.byref(affinity))
+            hidden = affinity.value == WDA_EXCLUDEFROMCAPTURE
+            print(f"{'🙈' if hidden else '⚠'} Screen overlay hidden from capture: {hidden} (affinity {affinity.value:#x})")

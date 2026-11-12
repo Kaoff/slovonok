@@ -65,6 +65,8 @@ def main() -> None:
     ]
     window = ScreenWindow(screen, f"http://{HOST}:{PORT}/overlay/?target=screen")
     window.show()
+    # Right before a punishment plays, put the window back above everything (taskbar included).
+    engine.before_punishment.append(window.bring_to_front_requested.emit)
 
     # Qt's event loop hides Ctrl+C from Python: quit explicitly, and wake Python up regularly.
     signal.signal(signal.SIGINT, lambda *_: qt_app.quit())
