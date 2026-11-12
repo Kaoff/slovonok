@@ -46,6 +46,7 @@ class Word(BaseModel):
     plural: bool = True
     enabled: bool = True
     count: int = 0
+    display_mode: Literal["shown", "hidden", "partial"] = "shown"  # in the words overlay
     punishments: PunishmentSelection = Field(default_factory=PunishmentSelection)
 
 
@@ -64,9 +65,20 @@ class OverlayDisplay(BaseModel):
     sound: bool = False  # off by default: OBS usually captures the screen window's sound already
 
 
+class WordsDisplay(BaseModel):
+    """List of forbidden words in the second OBS browser source (/overlay/words/)."""
+
+    font_size: float = 1.75  # rem
+    color: str = "#00f0ff"
+    align: Literal["left", "center", "right"] = "left"
+    position: Literal["top", "middle", "bottom"] = "top"
+    show_count: bool = True
+
+
 class Display(BaseModel):
     screen: ScreenDisplay = Field(default_factory=ScreenDisplay)
     overlay: OverlayDisplay = Field(default_factory=OverlayDisplay)
+    words: WordsDisplay = Field(default_factory=WordsDisplay)
 
 
 class Config(BaseModel):

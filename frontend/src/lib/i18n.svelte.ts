@@ -47,6 +47,12 @@ const en = {
 	'word.remove': 'Remove',
 	'word.moveUp': 'Move up',
 	'word.moveDown': 'Move down',
+	'word.display': 'In the overlay',
+	'word.display.shown': 'Shown',
+	'word.display.partial': 'Partial',
+	'word.display.hidden': 'Hidden',
+	'word.displayHint':
+		'How viewers see this word in the OBS words list: "époux", "é _ _ _ x" or "???".',
 
 	'punishments.title': 'Punishments',
 	'punishments.subtitle': "Shown on the streamer's screen and in the OBS overlay.",
@@ -111,6 +117,20 @@ const en = {
 	'settings.overlaySound': 'Play sound in the overlay',
 	'settings.overlaySoundHint':
 		'Only if OBS doesn\'t capture the screen\'s sound already. Tick "Control audio via OBS" on the source.',
+	'settings.wordsOverlay': 'OBS words list',
+	'settings.wordsOverlayHint':
+		'A second browser source, independent from the punishments overlay. Same size as the OBS canvas.',
+	'settings.wordsFontSize': 'Text size',
+	'settings.wordsColor': 'Color',
+	'settings.wordsAlign': 'Alignment',
+	'settings.wordsPosition': 'Position',
+	'settings.wordsShowCount': 'Show the counters',
+	'settings.align.left': 'Left',
+	'settings.align.center': 'Center',
+	'settings.align.right': 'Right',
+	'settings.position.top': 'Top',
+	'settings.position.middle': 'Middle',
+	'settings.position.bottom': 'Bottom',
 
 	'live.disconnected': 'Disconnected from the app',
 	'live.listening': 'Listening',
@@ -172,6 +192,12 @@ const fr: Dictionary = {
 	'word.remove': 'Retirer',
 	'word.moveUp': 'Monter',
 	'word.moveDown': 'Descendre',
+	'word.display': "Dans l'overlay",
+	'word.display.shown': 'Visible',
+	'word.display.partial': 'Partiel',
+	'word.display.hidden': 'Caché',
+	'word.displayHint':
+		'Comment les viewers voient ce mot dans la liste OBS : « époux », « é _ _ _ x » ou « ??? ».',
 
 	'punishments.title': 'Punitions',
 	'punishments.subtitle': "Affichées sur l'écran du streamer et dans l'overlay OBS.",
@@ -239,6 +265,20 @@ const fr: Dictionary = {
 	'settings.overlaySound': "Jouer le son dans l'overlay",
 	'settings.overlaySoundHint':
 		"Seulement si OBS ne capture pas déjà le son de l'écran. Cochez « Contrôler l'audio via OBS » sur la source.",
+	'settings.wordsOverlay': 'Liste des mots OBS',
+	'settings.wordsOverlayHint':
+		"Une deuxième source navigateur, indépendante de l'overlay des punitions. Même taille que le canevas OBS.",
+	'settings.wordsFontSize': 'Taille du texte',
+	'settings.wordsColor': 'Couleur',
+	'settings.wordsAlign': 'Alignement',
+	'settings.wordsPosition': 'Position',
+	'settings.wordsShowCount': 'Afficher les compteurs',
+	'settings.align.left': 'Gauche',
+	'settings.align.center': 'Centre',
+	'settings.align.right': 'Droite',
+	'settings.position.top': 'Haut',
+	'settings.position.middle': 'Milieu',
+	'settings.position.bottom': 'Bas',
 
 	'live.disconnected': "Déconnecté de l'appli",
 	'live.listening': 'Écoute en cours',

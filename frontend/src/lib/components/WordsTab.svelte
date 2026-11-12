@@ -16,6 +16,7 @@
 			plural: true,
 			enabled: true,
 			count: 0,
+			display_mode: 'shown',
 			punishments: { strategy: 'all', ids: [] }
 		});
 	}

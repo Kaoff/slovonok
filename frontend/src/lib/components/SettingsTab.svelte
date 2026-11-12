@@ -3,8 +3,9 @@
 	import { app } from '../app.svelte';
 	import { api } from '../api';
 	import { locales, t } from '../i18n.svelte';
-	import type { Microphones, ScreenInfo } from '../types';
+	import type { Microphones, ScreenInfo, WordsAlign, WordsPosition } from '../types';
 	import Segmented from '../ui/Segmented.svelte';
+	import Slider from '../ui/Slider.svelte';
 	import Toggle from '../ui/Toggle.svelte';
 
 	const config = $derived(app.config!);
@@ -12,9 +13,22 @@
 	let microphones = $state<Microphones | null>(null);
 	let screens = $state<ScreenInfo[]>([]);
 	let copied = $state(false);
+	let wordsCopied = $state(false);
 
 	// Always the backend's address, even when the panel runs on the Vite dev server.
 	const overlayUrl = 'http://localhost:8765/overlay/';
+	const wordsOverlayUrl = 'http://localhost:8765/overlay/words/';
+
+	const alignments = $derived<{ value: WordsAlign; label: string }[]>([
+		{ value: 'left', label: t('settings.align.left') },
+		{ value: 'center', label: t('settings.align.center') },
+		{ value: 'right', label: t('settings.align.right') }
+	]);
+	const positions = $derived<{ value: WordsPosition; label: string }[]>([
+		{ value: 'top', label: t('settings.position.top') },
+		{ value: 'middle', label: t('settings.position.middle') },
+		{ value: 'bottom', label: t('settings.position.bottom') }
+	]);
 
 	onMount(async () => {
 		[microphones, screens] = await Promise.all([api.microphones(), api.screens()]);
@@ -24,6 +38,12 @@
 		await navigator.clipboard.writeText(overlayUrl);
 		copied = true;
 		setTimeout(() => (copied = false), 1500);
+	}
+
+	async function copyWordsOverlayUrl() {
+		await navigator.clipboard.writeText(wordsOverlayUrl);
+		wordsCopied = true;
+		setTimeout(() => (wordsCopied = false), 1500);
 	}
 </script>
 
@@ -129,6 +149,48 @@
 			label={t('settings.overlaySound')}
 			hint={t('settings.overlaySoundHint')}
 		/>
+	</section>
+
+	<section class="space-y-4 panel pt-6">
+		<h3 class="subheading">{t('settings.wordsOverlay')}</h3>
+		<div class="space-y-1.5">
+			<span class="label">{t('settings.overlayUrl')}</span>
+			<div class="flex gap-2">
+				<input class="flex-1 px-3 py-1.5 text-sm well" readonly value={wordsOverlayUrl} />
+				<button class="key" onclick={copyWordsOverlayUrl}>
+					<span class={wordsCopied ? 'led-on' : 'led'}></span>
+					{wordsCopied ? t('settings.copied') : t('settings.copy')}
+				</button>
+			</div>
+			<span class="block text-xs text-muted">{t('settings.wordsOverlayHint')}</span>
+		</div>
+		<Slider
+			bind:value={config.display.words.font_size}
+			label={t('settings.wordsFontSize')}
+			min={1}
+			max={5}
+			step={0.25}
+			format={(v) => `${v} rem`}
+		/>
+		<label class="flex items-center gap-3">
+			<span class="label">{t('settings.wordsColor')}</span>
+			<input
+				type="color"
+				class="h-8 w-12 cursor-pointer p-1 recess"
+				bind:value={config.display.words.color}
+			/>
+		</label>
+		<div class="flex flex-wrap items-center gap-x-8 gap-y-3">
+			<div class="space-y-1.5">
+				<span class="label">{t('settings.wordsAlign')}</span>
+				<Segmented bind:value={config.display.words.align} options={alignments} />
+			</div>
+			<div class="space-y-1.5">
+				<span class="label">{t('settings.wordsPosition')}</span>
+				<Segmented bind:value={config.display.words.position} options={positions} />
+			</div>
+		</div>
+		<Toggle bind:checked={config.display.words.show_count} label={t('settings.wordsShowCount')} />
 	</section>
 
 	<section class="space-y-3 panel pt-6">

@@ -2,7 +2,7 @@
 	import { app } from '../app.svelte';
 	import { api } from '../api';
 	import { t } from '../i18n.svelte';
-	import type { Mode, Strategy, Word } from '../types';
+	import type { Mode, Strategy, Word, WordDisplayMode } from '../types';
 	import Segmented from '../ui/Segmented.svelte';
 	import Toggle from '../ui/Toggle.svelte';
 
@@ -19,6 +19,11 @@
 	const modes = $derived<{ value: Mode; label: string }[]>([
 		{ value: 'phonetic', label: t('word.phonetic') },
 		{ value: 'exact', label: t('word.exact') }
+	]);
+	const displayModes = $derived<{ value: WordDisplayMode; label: string }[]>([
+		{ value: 'shown', label: t('word.display.shown') },
+		{ value: 'partial', label: t('word.display.partial') },
+		{ value: 'hidden', label: t('word.display.hidden') }
 	]);
 	const strategies = $derived<{ value: Strategy; label: string }[]>([
 		{ value: 'all', label: t('word.strategy.all') },
@@ -90,6 +95,14 @@
 			{/if}
 		</div>
 	</div>
+
+	<section class="space-y-2">
+		<div class="flex flex-wrap items-center gap-3">
+			<h3 class="label text-base">{t('word.display')}</h3>
+			<Segmented bind:value={word.display_mode} options={displayModes} />
+		</div>
+		<p class="text-xs text-muted">{t('word.displayHint')}</p>
+	</section>
 
 	<section class="space-y-3">
 		<div class="flex flex-wrap items-center gap-3">

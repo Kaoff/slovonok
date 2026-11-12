@@ -3,6 +3,9 @@
 export type Mode = 'phonetic' | 'exact';
 export type Strategy = 'all' | 'random' | 'escalation';
 export type MediaType = 'sound' | 'image' | 'video';
+export type WordDisplayMode = 'shown' | 'hidden' | 'partial';
+export type WordsAlign = 'left' | 'center' | 'right';
+export type WordsPosition = 'top' | 'middle' | 'bottom';
 
 export interface ChromaKey {
 	enabled: boolean;
@@ -31,6 +34,7 @@ export interface Word {
 	plural: boolean;
 	enabled: boolean;
 	count: number;
+	display_mode: WordDisplayMode;
 	punishments: { strategy: Strategy; ids: string[] };
 }
 
@@ -42,6 +46,13 @@ export interface Config {
 	display: {
 		screen: { enabled: boolean; monitor: number; sound: boolean; hide_from_capture: boolean };
 		overlay: { sound: boolean };
+		words: {
+			font_size: number;
+			color: string;
+			align: WordsAlign;
+			position: WordsPosition;
+			show_count: boolean;
+		};
 	};
 	words: Word[];
 	punishments: Punishment[];
