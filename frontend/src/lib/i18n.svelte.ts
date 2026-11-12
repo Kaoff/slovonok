@@ -225,6 +225,22 @@ const en = {
 	'learn.save': 'Add to the word ({count})',
 	'learn.close': 'Close',
 
+	'settings.updates': 'Updates',
+	'settings.version': 'Version {version}',
+	'settings.updateCheck': 'Check for updates',
+	'settings.updateChecking': 'Checking…',
+	'settings.updateAvailable': 'Version {version} is available',
+	'settings.updateInstall': 'Install and restart',
+	'settings.updateInstallHint':
+		'The update is downloaded, then the app closes, updates and starts again. Your words, punishments and media are kept. Better done outside a stream.',
+	'settings.updateDevHint':
+		'This is a development run: updates are only installed by the packaged app.',
+	'settings.updateDownloading': 'Downloading the update… {percent} %',
+	'settings.updateInstalling': 'Installing: the app is about to close and restart.',
+	'settings.updateUpToDate': 'Up to date (checked at {time}).',
+	'settings.updateError': 'Update failed: {error}',
+	'update.banner': 'Version {version} available',
+
 	'live.disconnected': 'Disconnected from the app',
 	'live.listening': 'Listening',
 	'live.notListening': 'Not listening',
@@ -469,6 +485,22 @@ const fr: Dictionary = {
 	'learn.clear': 'Effacer',
 	'learn.save': 'Ajouter au mot ({count})',
 	'learn.close': 'Fermer',
+
+	'settings.updates': 'Mises à jour',
+	'settings.version': 'Version {version}',
+	'settings.updateCheck': 'Chercher les mises à jour',
+	'settings.updateChecking': 'Recherche…',
+	'settings.updateAvailable': 'La version {version} est disponible',
+	'settings.updateInstall': 'Installer et redémarrer',
+	'settings.updateInstallHint':
+		"La mise à jour est téléchargée, puis l'appli se ferme, se met à jour et redémarre. Vos mots, punitions et médias sont conservés. À faire plutôt en dehors d'un stream.",
+	'settings.updateDevHint':
+		'Ceci est un lancement de développement : seules les applis installées se mettent à jour.',
+	'settings.updateDownloading': 'Téléchargement de la mise à jour… {percent} %',
+	'settings.updateInstalling': "Installation : l'appli va se fermer puis redémarrer.",
+	'settings.updateUpToDate': 'À jour (vérifié à {time}).',
+	'settings.updateError': 'Échec de la mise à jour : {error}',
+	'update.banner': 'Version {version} disponible',
 
 	'live.disconnected': "Déconnecté de l'appli",
 	'live.listening': 'Écoute en cours',

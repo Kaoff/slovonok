@@ -22,6 +22,8 @@ from config import MEDIA_DIR, Config, ConfigStore
 from detection import Rule
 from engine import Engine
 from media import make_playable, media_type, needs_conversion
+from updater import UpdateError, Updater
+from version import __version__
 
 HOST = "127.0.0.1"
 PORT = 8765
@@ -50,6 +52,14 @@ def convert_existing_media() -> None:
             punishment.file = renamed.get(punishment.file, punishment.file)
         engine.update_config(config)
         print(f"🎞  Converted: {', '.join(f'{a} → {b}' for a, b in renamed.items())}")
+
+# Only a packaged app installs updates; a development run just reports the version
+updater = Updater(
+    current=__version__,
+    download_dir=paths.DATA_DIR / "updates",
+    can_install=paths.FROZEN,
+    publish=engine.broadcaster.publish,
+)
 
 
 @asynccontextmanager
@@ -222,6 +232,29 @@ def match(request: MatchRequest):
         return {"matches": engine.dry_run(rule, request.texts)}
     except ValueError as e:
         raise HTTPException(422, str(e)) from e
+
+
+# --- Updates ---------------------------------------------------------------
+
+
+@app.get("/api/update")
+def get_update():
+    return updater.state()
+
+
+@app.post("/api/update/check")
+def check_update():
+    """Looks for a newer release now (the app also does it at startup and every few hours)."""
+    return updater.check()
+
+
+@app.post("/api/update/install")
+def install_update():
+    """Downloads the newer release's installer and runs it: the app quits and comes back updated."""
+    try:
+        return updater.install()
+    except UpdateError as e:
+        raise HTTPException(409, str(e)) from e
 
 
 class Paused(BaseModel):

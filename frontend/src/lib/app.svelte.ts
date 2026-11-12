@@ -1,6 +1,6 @@
 import { api } from './api';
 import { i18n } from './i18n.svelte';
-import type { Config, MediaFile, ServerEvent, Status, Word } from './types';
+import type { Config, MediaFile, ServerEvent, Status, UpdateState, Word } from './types';
 
 type SaveState = 'saved' | 'pending' | 'saving' | 'error';
 
@@ -32,6 +32,7 @@ function serialize(config: Config): string {
 class AppState {
 	config = $state<Config | null>(null);
 	status = $state<Status | null>(null);
+	update = $state<UpdateState | null>(null);
 	media = $state<MediaFile[]>([]);
 	connected = $state(false);
 	saveState = $state<SaveState>('saved');
@@ -57,6 +58,7 @@ class AppState {
 			this.connect();
 			this.refreshMedia();
 			this.refreshStatus();
+			this.refreshUpdate();
 			setInterval(() => this.refreshStatus(), 3000);
 		})();
 		return this.#init;
@@ -119,6 +121,10 @@ class AppState {
 					at: new Date()
 				});
 				this.detections.length = Math.min(this.detections.length, 20);
+				break;
+
+			case 'update':
+				this.update = event.update;
 				break;
 
 			case 'error':
@@ -214,6 +220,14 @@ class AppState {
 	}
 
 	// --- Other data ------------------------------------------------------
+
+	async refreshUpdate() {
+		try {
+			this.update = await api.update();
+		} catch {
+			this.update = null;
+		}
+	}
 
 	async refreshStatus() {
 		try {

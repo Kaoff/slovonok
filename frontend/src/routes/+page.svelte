@@ -72,6 +72,17 @@
 			</ul>
 		</nav>
 
+		{#if app.update?.available}
+			<button
+				class="nav-item border-accent text-accent"
+				title={t('update.banner', { version: app.update.latest ?? '' })}
+				onclick={() => (tab = 'settings')}
+			>
+				<span aria-hidden="true" class="w-3">↑</span>
+				{t('update.banner', { version: app.update.latest ?? '' })}
+			</button>
+		{/if}
+
 		<div class="mt-auto space-y-4">
 			{#if import.meta.env.DEV}<CrtToggle />{/if}
 

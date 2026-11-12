@@ -142,9 +142,27 @@ export interface Status {
 	paused: boolean;
 }
 
+/** The updater's state (see backend/updater.py). */
+export interface UpdateState {
+	current: string;
+	latest: string | null;
+	/** A release newer than the running version exists. */
+	available: boolean;
+	notes: string;
+	size: number | null;
+	page_url: string | null;
+	stage: 'idle' | 'checking' | 'downloading' | 'installing';
+	progress: number; // 0 to 1, while downloading
+	error: string | null;
+	last_checked: number | null; // Unix time, in seconds
+	/** False in a development run: updates are only installed by the packaged app. */
+	can_install: boolean;
+}
+
 export type ServerEvent =
 	| { type: 'config'; config: Config }
 	| { type: 'transcription'; text: string; final: boolean }
 	| { type: 'detection'; word: Word }
 	| { type: 'punishment'; punishment: Punishment; word: string | null }
+	| { type: 'update'; update: UpdateState }
 	| { type: 'error'; message: string };

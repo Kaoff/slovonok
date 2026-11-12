@@ -179,6 +179,13 @@ class Tray(QSystemTrayIcon):
         self.setToolTip(f"{TITLE} — {text(state)}")
 
 
+class UpdateBridge(QObject):
+    """Lets the updater's worker thread talk to the Qt thread."""
+
+    available = Signal(str)  # a newer version exists
+    restart = Signal()  # the installer is on its way: leave, so it can replace our files
+
+
 # --- The screen window, kept in line with the settings --------------------------------------------------
 
 

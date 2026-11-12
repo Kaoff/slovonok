@@ -123,7 +123,7 @@ def main() -> int:
         return 1
 
     # Late import: it creates the engine, which needs the runtime configured above
-    from server import app, engine
+    from server import app, engine, updater
 
     server = uvicorn.Server(uvicorn.Config(app, host=HOST, port=PORT, log_level="warning"))
     server_thread = threading.Thread(target=server.run, daemon=True, name="server")
@@ -144,7 +144,7 @@ def main() -> int:
         qt_app.exec()
         exit_code = smoke.write_report(args.smoke, report)
     else:
-        exit_code = run_app(qt_app, single, engine, icon, args)
+        exit_code = run_app(qt_app, single, engine, updater, icon, args)
 
     # Release the microphone and the port before leaving (the installer replaces our files)
     engine.stop_listening()
@@ -153,7 +153,7 @@ def main() -> int:
     return exit_code
 
 
-def run_app(qt_app: QApplication, single: shell.SingleInstance, engine, icon: QIcon, args) -> int:
+def run_app(qt_app: QApplication, single: shell.SingleInstance, engine, updater, icon: QIcon, args) -> int:
     panel = shell.PanelWindow(f"http://{HOST}:{PORT}/", icon)
     screen = shell.ScreenController(f"http://{HOST}:{PORT}/overlay/?target=screen")
     # Settings changes (monitor, enabled, hidden from capture) apply live; a punishment puts the window on top
@@ -177,6 +177,16 @@ def run_app(qt_app: QApplication, single: shell.SingleInstance, engine, icon: QI
         )
         tray.show()
     single.show_requested.connect(panel.show_panel)
+
+    # Updates: the updater runs in worker threads, the bridge hands its news to the Qt thread
+    bridge = shell.UpdateBridge()
+    updater.on_available.append(bridge.available.emit)
+    updater.on_restart = bridge.restart.emit
+    bridge.restart.connect(quit_app)
+    if tray:
+        bridge.available.connect(lambda version: tray.showMessage(shell.TITLE, shell.text("update", version=version)))
+    if paths.FROZEN or os.environ.get("SLOVONOK_AUTO_UPDATE_CHECK") == "1":  # a development run doesn't poll GitHub
+        updater.start_background_checks()
     if not args.background or tray is None:
         panel.show_panel()
 

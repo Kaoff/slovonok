@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { app } from '../app.svelte';
 	import { api } from '../api';
-	import { locales, t } from '../i18n.svelte';
+	import { i18n, locales, t } from '../i18n.svelte';
 	import type { Microphones, ScreenInfo, WordsAlign, WordsPosition } from '../types';
 	import Segmented from '../ui/Segmented.svelte';
 	import Slider from '../ui/Slider.svelte';
@@ -11,6 +11,36 @@
 	import WordsPreview from './WordsPreview.svelte';
 
 	const config = $derived(app.config!);
+
+	// --- Updates ---
+	const update = $derived(app.update);
+	const busy = $derived(update !== null && update.stage !== 'idle');
+	let updateError = $state<string | null>(null);
+
+	async function checkUpdate() {
+		updateError = null;
+		try {
+			app.update = await api.checkUpdate();
+		} catch (e) {
+			updateError = (e as Error).message;
+		}
+	}
+
+	async function installUpdate() {
+		updateError = null;
+		try {
+			app.update = await api.installUpdate();
+		} catch (e) {
+			updateError = (e as Error).message;
+		}
+	}
+
+	const megabytes = (bytes: number) => `${(bytes / 1_000_000).toFixed(0)} MB`;
+	const clock = (unixSeconds: number) =>
+		new Date(unixSeconds * 1000).toLocaleTimeString(i18n.locale, {
+			hour: '2-digit',
+			minute: '2-digit'
+		});
 
 	let microphones = $state<Microphones | null>(null);
 	let screens = $state<ScreenInfo[]>([]);
@@ -262,6 +292,63 @@
 			</div>
 			<Toggle bind:checked={config.display.words.show_count} label={t('settings.wordsShowCount')} />
 		{/if}
+	</section>
+
+	<section class="space-y-4 panel pt-6">
+		<h3 class="subheading">{t('settings.updates')}</h3>
+		<p class="text-sm">{t('settings.version', { version: update?.current ?? '…' })}</p>
+
+		{#if update?.stage === 'downloading'}
+			<div class="space-y-1.5">
+				<p class="text-sm text-accent">
+					{t('settings.updateDownloading', { percent: Math.round(update.progress * 100) })}
+				</p>
+				<div
+					class="h-2 recess"
+					role="progressbar"
+					aria-valuenow={Math.round(update.progress * 100)}
+				>
+					<div class="h-full bg-accent" style:width="{update.progress * 100}%"></div>
+				</div>
+			</div>
+		{:else if update?.stage === 'installing'}
+			<p class="text-sm text-accent">{t('settings.updateInstalling')}</p>
+		{:else if update?.available}
+			<div class="space-y-2 module">
+				<p class="text-sm font-strong text-accent">
+					{t('settings.updateAvailable', { version: update.latest ?? '' })}
+					{#if update.size}<span class="font-normal text-muted">({megabytes(update.size)})</span
+						>{/if}
+				</p>
+				{#if update.notes}
+					<p class="max-h-48 overflow-y-auto text-xs whitespace-pre-wrap text-muted">
+						{update.notes}
+					</p>
+				{/if}
+				{#if update.can_install}
+					<button class="key-primary" disabled={busy} onclick={installUpdate}>
+						{t('settings.updateInstall')}
+					</button>
+					<p class="text-xs text-muted">{t('settings.updateInstallHint')}</p>
+				{:else}
+					<p class="text-xs text-muted">{t('settings.updateDevHint')}</p>
+				{/if}
+			</div>
+		{:else if update?.last_checked && !update.error}
+			<p class="text-sm text-muted">
+				{t('settings.updateUpToDate', { time: clock(update.last_checked) })}
+			</p>
+		{/if}
+
+		{#if update?.error || updateError}
+			<p class="text-xs text-danger">
+				{t('settings.updateError', { error: updateError ?? update?.error ?? '' })}
+			</p>
+		{/if}
+
+		<button class="key" disabled={busy} onclick={checkUpdate}>
+			{update?.stage === 'checking' ? t('settings.updateChecking') : t('settings.updateCheck')}
+		</button>
 	</section>
 
 	<section class="space-y-3 panel pt-6">

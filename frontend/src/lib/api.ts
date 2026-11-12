@@ -5,7 +5,8 @@ import type {
 	Microphones,
 	PunishmentTest,
 	ScreenInfo,
-	Status
+	Status,
+	UpdateState
 } from './types';
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
@@ -49,6 +50,9 @@ export const api = {
 	testPunishment: (id: string) =>
 		request<PunishmentTest>('POST', `/api/punishments/${encodeURIComponent(id)}/test`),
 	/** Pauses detection (the panel repeats this every few seconds while learning a word). */
+	update: () => request<UpdateState>('GET', '/api/update'),
+	checkUpdate: () => request<UpdateState>('POST', '/api/update/check'),
+	installUpdate: () => request<UpdateState>('POST', '/api/update/install'),
 	setPaused: (paused: boolean) => request<Status>('POST', '/api/pause', { paused }),
 	setLearning: (active: boolean) =>
 		request<{ learning: boolean }>('POST', '/api/learning', { active }),
