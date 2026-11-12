@@ -4,6 +4,8 @@ A local HTTP server plays GitHub: the "latest release" JSON and the installer fi
 """
 
 import hashlib
+import subprocess
+import sys
 import http.server
 import json
 import tempfile
@@ -18,6 +20,7 @@ from updater import (
     Updater,
     installer_command,
     is_newer,
+    launch_installer,
     parse_version,
 )
 
@@ -113,6 +116,27 @@ class TestInstallerCommand(unittest.TestCase):
         self.assertLess(script.index("Wait-Process"), script.index("Start-Process"))
         self.assertIn("'/SILENT'", script)
         self.assertIn("o''brien", script)  # a quote in the path can't break out of the string
+
+
+@unittest.skipUnless(sys.platform == "win32", "the installer chain is Windows-only")
+class TestLaunchingForReal(unittest.TestCase):
+    def test_the_installer_runs_after_the_app_has_exited(self):
+        """The real chain: a detached PowerShell waits for a process to end, then runs the file.
+        (A fake "installer" writes a marker; the "app" is a short-lived process.)"""
+        with tempfile.TemporaryDirectory() as folder:
+            marker = Path(folder) / "ran.txt"
+            fake = Path(folder) / "Slovonok-Setup-9.9.9 (test).cmd"
+            fake.write_text(f'@echo %* > "{marker}"\r\n', encoding="ascii")
+            app = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(3)"])
+            launch_installer(fake, pid=app.pid)
+            time.sleep(1.5)
+            self.assertFalse(marker.exists(), "the installer must wait for the app to exit")
+            app.wait()
+            end = time.time() + 20
+            while not marker.exists() and time.time() < end:
+                time.sleep(0.2)
+            self.assertTrue(marker.exists(), "the installer never ran")
+            self.assertIn("/SILENT", marker.read_text())
 
 
 class TestVersions(unittest.TestCase):

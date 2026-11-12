@@ -25,6 +25,12 @@ it asks `releases/latest` at startup, every six hours and when "Check for update
    Output: `packaging\output\Slovonok-Setup-0.2.0.exe` and `Slovonok-Setup-0.2.0.exe.sha256`.
 4. **Try the installer** on a clean-ish setup (at least once per release that changes packaging):
    install, launch, say a forbidden word, quit from the tray, uninstall.
+   To check the **update path** itself (once, and whenever `updater.py` or `installer.iss` changes):
+   build two consecutive versions (bump `version.py` temporarily, build, bump again, build, then
+   revert the bump) and run `python packaging\update_e2e.py <old>.exe <new>.exe <scratch folder>`.
+   It installs the old one silently into the scratch folder, serves the new one from a local
+   server posing as GitHub, updates through the app's own API and checks the relaunch, the new
+   version, that user data survived and that the uninstall is clean.
 5. **Tag and publish**:
    ```powershell
    git tag v0.2.0

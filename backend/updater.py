@@ -66,10 +66,21 @@ def installer_command(installer: Path, pid: int) -> list[str]:
     return ["powershell.exe", "-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", script]
 
 
-def launch_installer(installer: Path) -> None:
-    """Starts, detached from the app, what will run the installer once the app has quit."""
-    flags = getattr(subprocess, "DETACHED_PROCESS", 0) | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
-    subprocess.Popen(installer_command(installer, os.getpid()), creationflags=flags, close_fds=True)
+def launch_installer(installer: Path, pid: int | None = None) -> None:
+    """Starts, independently of the app, what will run the installer once the app (`pid`) has quit.
+
+    Not DETACHED_PROCESS: PowerShell needs a console, and without one it exits at once without
+    running anything (found the hard way). CREATE_NO_WINDOW gives it a hidden one, and works from
+    a windowed app that has no console of its own."""
+    flags = getattr(subprocess, "CREATE_NO_WINDOW", 0) | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+    subprocess.Popen(
+        installer_command(installer, pid if pid is not None else os.getpid()),
+        creationflags=flags,
+        close_fds=True,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
 
 
 class UpdateError(Exception):
